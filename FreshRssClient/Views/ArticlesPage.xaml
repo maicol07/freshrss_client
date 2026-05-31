@@ -364,19 +364,6 @@
         <!-- Column 1: Article Content Viewer -->
         <ScrollViewer x:Name="RightScroll" Grid.Column="1" Padding="24" Visibility="Collapsed">
             <StackPanel Spacing="16">
-                <!-- Back Button -->
-                <Button x:Name="BackButton" 
-                        Background="Transparent" 
-                        BorderThickness="0" 
-                        Width="32" 
-                        Height="32" 
-                        Padding="0" 
-                        CornerRadius="16" 
-                        Margin="0,0,0,12" 
-                        Visibility="Collapsed"
-                        Click="OnBackClicked">
-                    <FontIcon Glyph="&#xE72B;" FontSize="14" FontFamily="Segoe Fluent Icons"/>
-                </Button>
 
                 <!-- Image Header -->
                 <Border x:Name="ArticleImageBorder" CornerRadius="8" HorizontalAlignment="Left">
