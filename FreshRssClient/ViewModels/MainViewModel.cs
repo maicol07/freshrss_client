@@ -189,8 +189,6 @@ namespace FreshRssClient.ViewModels
                             _suppressSelectionCallback = false;
                         }
                         SelectedArticles.Clear();
-                        _isHeaderToggleActive = false;
-                        OnPropertyChanged(nameof(IsHeaderToggleActive));
                         OnPropertyChanged(nameof(SelectedArticlesCountText));
                         OnPropertyChanged(nameof(HasSelectedArticles));
                     }
@@ -200,19 +198,6 @@ namespace FreshRssClient.ViewModels
         }
 
         public bool IsMultiSelectActive => _isMultiSelectMode;
-
-        private bool _isHeaderToggleActive = false;
-        public bool IsHeaderToggleActive
-        {
-            get => _isHeaderToggleActive;
-            set
-            {
-                if (SetProperty(ref _isHeaderToggleActive, value))
-                {
-                    IsMultiSelectMode = value;
-                }
-            }
-        }
 
         public List<RssArticle> SelectedArticles { get; } = new();
         public string SelectedArticlesCountText => $"{SelectedArticles.Count} {LocalizationManager.Current.SelectedArticlesSuffix}";
@@ -255,9 +240,7 @@ namespace FreshRssClient.ViewModels
             if (article.IsSelected)
             {
                 if (!SelectedArticles.Contains(article))
-                {
                     SelectedArticles.Add(article);
-                }
             }
             else
             {
@@ -265,13 +248,9 @@ namespace FreshRssClient.ViewModels
             }
 
             if (SelectedArticles.Count > 0)
-            {
                 IsMultiSelectMode = true;
-            }
             else
-            {
                 IsMultiSelectMode = false;
-            }
 
             OnPropertyChanged(nameof(SelectedArticlesCountText));
             OnPropertyChanged(nameof(HasSelectedArticles));
