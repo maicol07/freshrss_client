@@ -147,7 +147,6 @@ namespace FreshRssClient.Views
 
             ToolTipService.SetToolTip(RefreshBtn, LocalizationManager.Current.SyncNowButton);
             ToolTipService.SetToolTip(MarkAllReadBtn, LocalizationManager.Current.MarkAllAsRead);
-            ToolTipService.SetToolTip(BackButton, LocalizationManager.Current.BackToGridButton);
             
             OpenBrowserButton.Content = LocalizationManager.Current.OpenInBrowser;
             
@@ -196,7 +195,6 @@ namespace FreshRssClient.Views
                     Grid.SetColumnSpan(LeftGrid, 2);
                     
                     RightScroll.Visibility = Visibility.Collapsed;
-                    BackButton.Visibility = Visibility.Collapsed;
                 }
                 else
                 {
@@ -205,7 +203,6 @@ namespace FreshRssClient.Views
                     RightScroll.Visibility = Visibility.Visible;
                     Grid.SetColumn(RightScroll, 0);
                     Grid.SetColumnSpan(RightScroll, 2);
-                    BackButton.Visibility = Visibility.Visible;
                 }
             }
             else
@@ -225,8 +222,6 @@ namespace FreshRssClient.Views
 
                 LeftColumnDefinition.Width = new GridLength(350);
                 RightColumnDefinition.Width = new GridLength(1, GridUnitType.Star);
-
-                BackButton.Visibility = Visibility.Collapsed;
             }
 
             // Update layout button icon and tooltip

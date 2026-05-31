@@ -6,34 +6,27 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
-    <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
-
-        <TitleBar x:Name="AppTitleBar" 
-                  Title="FreshRssClient"
-                  Grid.Row="0">
-            <TitleBar.IconSource>
-                <ImageIconSource ImageSource="ms-appx:///Assets/AppIcon.ico"/>
-            </TitleBar.IconSource>
-            <TitleBar.Content>
-                <Grid Padding="8,0,8,0" HorizontalAlignment="Stretch">
-                    <AutoSuggestBox x:Name="SearchBox" 
-                                    Width="300"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    QueryIcon="Find"/>
-                </Grid>
-            </TitleBar.Content>
-        </TitleBar>
-
-        <ContentControl x:Name="MainContent"
-                        Grid.Row="1"
-                        HorizontalAlignment="Stretch"
-                        VerticalAlignment="Stretch"
-                        HorizontalContentAlignment="Stretch"
-                        VerticalContentAlignment="Stretch"/>
-    </Grid>
+    <NavigationView x:Name="AppNavigationView"
+                    PaneDisplayMode="Left"
+                    IsSettingsVisible="True"
+                    IsBackButtonVisible="Auto"
+                    IsPaneToggleButtonVisible="True"
+                    AlwaysShowHeader="False"
+                    BackRequested="OnNavigationBackRequested"
+                    SelectionChanged="OnNavigationSelectionChanged"
+                    HorizontalAlignment="Stretch"
+                    VerticalAlignment="Stretch">
+        <NavigationView.PaneHeader>
+            <Grid Padding="12,8">
+                <AutoSuggestBox x:Name="SearchBox" 
+                                Width="250"
+                                HorizontalAlignment="Stretch"
+                                VerticalAlignment="Center"
+                                QueryIcon="Find"/>
+            </Grid>
+        </NavigationView.PaneHeader>
+        <NavigationView.Content>
+            <Grid x:Name="ContentGrid" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+        </NavigationView.Content>
+    </NavigationView>
 </Window>
