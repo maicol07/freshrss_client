@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "FreshRssClient (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "FreshRssClient (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}
