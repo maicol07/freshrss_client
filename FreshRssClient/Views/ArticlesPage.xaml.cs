@@ -146,7 +146,6 @@ namespace FreshRssClient.Views
             ShowAllItem.Text = LocalizationManager.Current.FilterAll;
 
             ToolTipService.SetToolTip(RefreshBtn, LocalizationManager.Current.SyncNowButton);
-            ToolTipService.SetToolTip(MarkAllReadBtn, LocalizationManager.Current.MarkAllAsRead);
             
             OpenBrowserButton.Content = LocalizationManager.Current.OpenInBrowser;
             
@@ -330,7 +329,7 @@ namespace FreshRssClient.Views
                 bool isShiftPressed = (shiftState & Windows.UI.Core.CoreVirtualKeyStates.Down) == Windows.UI.Core.CoreVirtualKeyStates.Down;
                 bool isModifierPressed = isCtrlPressed || isShiftPressed;
 
-                bool isMulti = isModifierPressed || items.Count > 1 || _viewModel.IsHeaderToggleActive;
+                bool isMulti = isModifierPressed || items.Count > 1;
 
                 if (isMulti)
                 {
@@ -342,7 +341,7 @@ namespace FreshRssClient.Views
                             selectedList.Add(article);
                         }
                     }
-                    if (selectedList.Count > 0 || _viewModel.IsHeaderToggleActive)
+                    if (selectedList.Count > 0)
                     {
                         _viewModel.IsMultiSelectMode = true;
                         _viewModel.SetSelectedArticles(selectedList);
@@ -432,12 +431,50 @@ namespace FreshRssClient.Views
 
         private async void OnMassMarkReadClicked(object sender, RoutedEventArgs e)
         {
-            if (_viewModel != null) await _viewModel.MarkSelectedAsReadAsync();
+            if (_viewModel == null) return;
+
+            var count = _viewModel.SelectedArticles.Count;
+            var dialog = new ContentDialog
+            {
+                Title = LocalizationManager.CurrentLanguageCode == "it" ? "Conferma" : "Confirm",
+                Content = string.Format(
+                    LocalizationManager.CurrentLanguageCode == "it"
+                        ? "Segnare {0} articoli come letti?"
+                        : "Mark {0} articles as read?",
+                    count),
+                PrimaryButtonText = LocalizationManager.CurrentLanguageCode == "it" ? "Sì" : "Yes",
+                CloseButtonText = LocalizationManager.CurrentLanguageCode == "it" ? "Annulla" : "Cancel",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = this.XamlRoot
+            };
+
+            var result = await dialog.ShowAsync();
+            if (result == ContentDialogResult.Primary)
+                await _viewModel.MarkSelectedAsReadAsync();
         }
 
         private async void OnMassOpenClicked(object sender, RoutedEventArgs e)
         {
-            if (_viewModel != null) await _viewModel.OpenSelectedInBrowserAsync();
+            if (_viewModel == null) return;
+
+            var count = _viewModel.SelectedArticles.Count;
+            var dialog = new ContentDialog
+            {
+                Title = LocalizationManager.CurrentLanguageCode == "it" ? "Conferma" : "Confirm",
+                Content = string.Format(
+                    LocalizationManager.CurrentLanguageCode == "it"
+                        ? "Aprire {0} articoli nel browser?"
+                        : "Open {0} articles in browser?",
+                    count),
+                PrimaryButtonText = LocalizationManager.CurrentLanguageCode == "it" ? "Sì" : "Yes",
+                CloseButtonText = LocalizationManager.CurrentLanguageCode == "it" ? "Annulla" : "Cancel",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = this.XamlRoot
+            };
+
+            var result = await dialog.ShowAsync();
+            if (result == ContentDialogResult.Primary)
+                await _viewModel.OpenSelectedInBrowserAsync();
         }
 
         private void OnBackClicked(object sender, RoutedEventArgs e)
