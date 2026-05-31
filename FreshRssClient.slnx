@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="FreshRssClient.Tests/FreshRssClient.Tests.csproj" />
+  <Project Path="FreshRssClient/FreshRssClient.csproj" />
+</Solution>

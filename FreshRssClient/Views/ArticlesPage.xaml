@@ -1,0 +1,428 @@
+<Page
+    x:Class="FreshRssClient.Views.ArticlesPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:services="using:FreshRssClient.Services"
+    xmlns:views="using:FreshRssClient.Views"
+    mc:Ignorable="d">
+
+    <Page.Resources>
+        <views:StringToImageSourceConverter x:Key="ImageConverter"/>
+
+        <!-- ListView Item Template -->
+        <DataTemplate x:Key="ArticleListTemplate" x:DataType="services:RssArticle">
+            <Grid Padding="12,10">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Selection CheckBox -->
+                <CheckBox Grid.Row="0" Grid.Column="0" 
+                          IsChecked="{x:Bind IsSelected, Mode=TwoWay}"
+                          MinWidth="0" MinHeight="0"
+                          Width="24" Height="24"
+                          Padding="0"
+                          HorizontalAlignment="Left"
+                          VerticalAlignment="Top"
+                          Margin="-4,0,0,0"
+                          Opacity="0.85"/>
+
+                <!-- Left Column: Content -->
+                <Grid Grid.Row="0" Grid.Column="0" Margin="20,0,8,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Feed Header -->
+                    <Grid Grid.Row="0" Margin="0,0,0,4">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        
+                        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                            <Image Source="{x:Bind FeedIconUrl, Converter={StaticResource ImageConverter}, Mode=OneWay}" Width="16" Height="16" Stretch="UniformToFill" VerticalAlignment="Center"/>
+                            <TextBlock Text="{x:Bind FeedTitle, Mode=OneWay}" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" FontWeight="Medium" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxLines="1"/>
+                        </StackPanel>
+
+                        <Button Grid.Column="1" 
+                                Command="{x:Bind MarkAsReadCommand, Mode=OneWay}"
+                                Visibility="{x:Bind MarkAsReadVisibility, Mode=OneWay}"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                Padding="0"
+                                Width="24"
+                                Height="24"
+                                CornerRadius="12"
+                                VerticalAlignment="Center">
+                            <FontIcon Glyph="&#xE8FB;" FontSize="12" FontFamily="Segoe Fluent Icons"/>
+                        </Button>
+                    </Grid>
+
+                    <!-- Title -->
+                    <TextBlock Grid.Row="1" 
+                               Text="{x:Bind Title, Mode=OneWay}" 
+                               FontSize="14" 
+                               FontWeight="{x:Bind TitleFontWeight, Mode=OneWay}" 
+                               Opacity="{x:Bind TitleOpacity, Mode=OneWay}"
+                               TextWrapping="Wrap" 
+                               MaxLines="2"/>
+
+                    <!-- Date -->
+                    <TextBlock Grid.Row="2" 
+                               Text="{x:Bind PublishDate, Mode=OneWay}" 
+                               FontSize="11" 
+                               Foreground="{ThemeResource TextFillColorTertiaryBrush}" 
+                               Margin="0,4,0,0"/>
+                </Grid>
+
+                <!-- Right Column: Image (if any) -->
+                <Border Grid.Row="0" Grid.Column="1" 
+                        Width="60" 
+                        Height="60" 
+                        CornerRadius="6" 
+                        VerticalAlignment="Center"
+                        Visibility="{x:Bind ImageVisibility, Mode=OneWay}">
+                    <Image Source="{x:Bind ImageUrl, Converter={StaticResource ImageConverter}, Mode=OneWay}" Stretch="UniformToFill" Width="60" Height="60"/>
+                </Border>
+
+                <!-- Bottom Separator -->
+                <Border Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" 
+                        Height="1" 
+                        BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}" 
+                        BorderThickness="0,0,0,1" 
+                        Margin="12,4,12,0"/>
+            </Grid>
+        </DataTemplate>
+
+        <!-- GridView Item Template -->
+        <DataTemplate x:Key="ArticleGridTemplate" x:DataType="services:RssArticle">
+            <Border Width="260" Height="280" Margin="0" 
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" 
+                    CornerRadius="8" 
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" 
+                    BorderThickness="1">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="120"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Image / Header Area -->
+                    <Grid Grid.Row="0" Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}" CornerRadius="8,8,0,0">
+                        <SymbolIcon Symbol="Document" Foreground="{ThemeResource TextFillColorTertiaryBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        <Image Source="{x:Bind ImageUrl, Converter={StaticResource ImageConverter}, Mode=OneWay}" Stretch="UniformToFill" Width="260" Height="120"/>
+                        
+                        <!-- Selection CheckBox -->
+                        <CheckBox IsChecked="{x:Bind IsSelected, Mode=TwoWay}"
+                                  MinWidth="0" MinHeight="0"
+                                  Width="24" Height="24"
+                                  Padding="0"
+                                  HorizontalAlignment="Left"
+                                  VerticalAlignment="Top"
+                                  Margin="8"
+                                  Opacity="0.85"/>
+
+                        <Button Command="{x:Bind MarkAsReadCommand, Mode=OneWay}"
+                                Visibility="{x:Bind MarkAsReadVisibility, Mode=OneWay}"
+                                Background="{ThemeResource SystemAccentColorBrush}"
+                                Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                Width="28"
+                                Height="28"
+                                Padding="0"
+                                CornerRadius="14"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Top"
+                                Margin="8">
+                            <FontIcon Glyph="&#xE8FB;" FontSize="12" FontFamily="Segoe Fluent Icons"/>
+                        </Button>
+                    </Grid>
+
+                    <!-- Details Area -->
+                    <Grid Grid.Row="1" Padding="12">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Source Feed -->
+                        <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="6" Margin="0,0,0,4">
+                            <Image Source="{x:Bind FeedIconUrl, Converter={StaticResource ImageConverter}, Mode=OneWay}" Width="14" Height="14" Stretch="UniformToFill" VerticalAlignment="Center"/>
+                            <TextBlock Text="{x:Bind FeedTitle, Mode=OneWay}" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}" FontWeight="Medium" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxLines="1"/>
+                        </StackPanel>
+
+                        <!-- Title -->
+                        <TextBlock Grid.Row="1" 
+                                   Text="{x:Bind Title, Mode=OneWay}" 
+                                   FontSize="13" 
+                                   FontWeight="{x:Bind TitleFontWeight, Mode=OneWay}" 
+                                   Opacity="{x:Bind TitleOpacity, Mode=OneWay}"
+                                   TextWrapping="Wrap" 
+                                   MaxLines="2"
+                                   TextTrimming="CharacterEllipsis" 
+                                   Margin="0,0,0,4"/>
+
+                        <!-- Summary -->
+                        <TextBlock Grid.Row="2" 
+                                   Text="{x:Bind Summary, Mode=OneWay}" 
+                                   FontSize="11" 
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" 
+                                   TextWrapping="Wrap" 
+                                   MaxLines="3"
+                                   TextTrimming="CharacterEllipsis" 
+                                   Opacity="0.85"/>
+
+                        <!-- Date -->
+                        <TextBlock Grid.Row="3" 
+                                   Text="{x:Bind PublishDate, Mode=OneWay}" 
+                                   FontSize="10" 
+                                   Foreground="{ThemeResource TextFillColorTertiaryBrush}" 
+                                   Margin="0,4,0,0"/>
+                    </Grid>
+                </Grid>
+            </Border>
+        </DataTemplate>
+    </Page.Resources>
+
+    <Grid x:Name="RootGrid" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition x:Name="LeftColumnDefinition" Width="350"/>
+            <ColumnDefinition x:Name="RightColumnDefinition" Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Divider Border -->
+        <Border x:Name="VerticalDivider" Grid.Column="0" 
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" 
+                BorderThickness="0,0,1,0" 
+                HorizontalAlignment="Right" 
+                VerticalAlignment="Stretch"/>
+
+        <!-- Column 0: Articles List/Grid -->
+        <Grid x:Name="LeftGrid" Grid.Column="0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/> <!-- Row 0: Top Header bar -->
+                <RowDefinition Height="Auto"/> <!-- Row 1: ProgressRing -->
+                <RowDefinition Height="*"/>    <!-- Row 2: ListView / GridView -->
+                <RowDefinition Height="Auto"/> <!-- Row 3: Mass Action Bar -->
+                <RowDefinition Height="32"/>   <!-- Row 4: Bottom Status bar -->
+            </Grid.RowDefinitions>
+
+            <!-- Top Header Bar -->
+            <Grid Grid.Row="0" Padding="12,8,12,8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock x:Name="TitleText" Grid.Column="0" 
+                           FontSize="16" 
+                           FontWeight="SemiBold" 
+                           VerticalAlignment="Center"/>
+
+                <Button x:Name="FilterBtn" Grid.Column="1" 
+                        Background="Transparent" 
+                        BorderThickness="0" 
+                        VerticalAlignment="Center" 
+                        Width="32" 
+                        Height="32" 
+                        Padding="0" 
+                        CornerRadius="16" 
+                        Margin="0,0,6,0">
+                    <FontIcon Glyph="&#xE71C;" FontSize="14" FontFamily="Segoe Fluent Icons"/>
+                    <Button.Flyout>
+                        <MenuFlyout x:Name="FilterMenu">
+                            <RadioMenuFlyoutItem x:Name="ShowUnreadItem" GroupName="ArticleFilterGroup" Click="OnFilterUnreadClicked"/>
+                            <RadioMenuFlyoutItem x:Name="ShowReadItem" GroupName="ArticleFilterGroup" Click="OnFilterReadClicked"/>
+                            <RadioMenuFlyoutItem x:Name="ShowAllItem" GroupName="ArticleFilterGroup" Click="OnFilterAllClicked"/>
+                        </MenuFlyout>
+                    </Button.Flyout>
+                </Button>
+
+                <Button x:Name="MarkAllReadBtn" Grid.Column="2" 
+                        Background="Transparent" 
+                        BorderThickness="0" 
+                        VerticalAlignment="Center" 
+                        Width="32" 
+                        Height="32" 
+                        Padding="0" 
+                        CornerRadius="16" 
+                        Margin="0,0,6,0"
+                        Click="OnMarkAllReadClicked">
+                    <FontIcon Glyph="&#xE8BC;" FontSize="14" FontFamily="Segoe Fluent Icons"/>
+                </Button>
+
+                <ToggleButton x:Name="MultiSelectBtn" Grid.Column="3" 
+                              Background="Transparent" 
+                              BorderThickness="0" 
+                              VerticalAlignment="Center" 
+                              Width="32" 
+                              Height="32" 
+                              Padding="0" 
+                              CornerRadius="16" 
+                              Margin="0,0,6,0">
+                    <FontIcon Glyph="&#xE762;" FontSize="14" FontFamily="Segoe Fluent Icons"/>
+                </ToggleButton>
+
+                <Button x:Name="LayoutBtn" Grid.Column="4" 
+                        Background="Transparent" 
+                        BorderThickness="0" 
+                        VerticalAlignment="Center" 
+                        Width="32" 
+                        Height="32" 
+                        Padding="0" 
+                        CornerRadius="16" 
+                        Margin="0,0,6,0"
+                        Click="OnLayoutClicked">
+                    <FontIcon x:Name="LayoutBtnIcon" Glyph="&#xE118;" FontSize="14" FontFamily="Segoe Fluent Icons"/>
+                </Button>
+
+                <Button x:Name="RefreshBtn" Grid.Column="5" 
+                        Background="Transparent" 
+                        BorderThickness="0" 
+                        VerticalAlignment="Center" 
+                        Width="32" 
+                        Height="32" 
+                        Padding="0" 
+                        CornerRadius="16"/>
+            </Grid>
+
+            <!-- ProgressRing -->
+            <ProgressRing x:Name="ProgressIndicator" Grid.Row="1" 
+                          IsActive="False" 
+                          Width="20" 
+                          Height="20" 
+                          Margin="0,8,0,8" 
+                          HorizontalAlignment="Center" 
+                          Visibility="Collapsed"/>
+
+            <!-- ListView (Split Layout) -->
+            <ListView x:Name="ArticlesListView" Grid.Row="2" 
+                      SelectionMode="Extended" 
+                      Margin="0"
+                      ItemTemplate="{StaticResource ArticleListTemplate}"
+                      SelectionChanged="OnArticlesListViewSelectionChanged"/>
+
+            <!-- GridView (Grid Layout) -->
+            <GridView x:Name="ArticlesGridView" Grid.Row="2" 
+                      SelectionMode="Extended" 
+                      Margin="12" 
+                      Padding="0"
+                      ItemTemplate="{StaticResource ArticleGridTemplate}"
+                      Visibility="Collapsed"
+                      SelectionChanged="OnArticlesGridViewSelectionChanged"/>
+
+            <!-- Mass Action Bar -->
+            <Grid x:Name="MassMenuBar" Grid.Row="3" 
+                  Padding="12,8,12,8" 
+                  Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}" 
+                  Visibility="Collapsed" 
+                  BorderThickness="0,1,0,1" 
+                  BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock x:Name="SelectedCountText" Grid.Column="0" 
+                           VerticalAlignment="Center" 
+                           FontSize="13" 
+                           FontWeight="Medium"/>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                    <Button x:Name="MassMarkReadBtn" Click="OnMassMarkReadClicked">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <FontIcon Glyph="&#xE8FB;" FontSize="12" FontFamily="Segoe Fluent Icons"/>
+                            <TextBlock x:Name="MassMarkReadText"/>
+                        </StackPanel>
+                    </Button>
+                    <Button x:Name="MassOpenBtn" Click="OnMassOpenClicked"
+                            Background="{ThemeResource SystemAccentColorBrush}" 
+                            Foreground="White">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <FontIcon Glyph="&#xE71B;" FontSize="12" FontFamily="Segoe Fluent Icons"/>
+                            <TextBlock x:Name="MassOpenText"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </Grid>
+
+            <!-- Sync Status bottom bar -->
+            <Grid Grid.Row="4" Padding="12,0,12,0" Background="{ThemeResource SolidBackgroundFillColorBaseBrush}">
+                <TextBlock x:Name="SyncStatusText" VerticalAlignment="Center" 
+                           FontSize="11" 
+                           Foreground="{ThemeResource TextFillColorSecondaryBrush}" 
+                           TextTrimming="CharacterEllipsis"/>
+            </Grid>
+        </Grid>
+
+        <!-- Column 1: Article Content Viewer -->
+        <ScrollViewer x:Name="RightScroll" Grid.Column="1" Padding="24" Visibility="Collapsed">
+            <StackPanel Spacing="16">
+                <!-- Back Button -->
+                <Button x:Name="BackButton" 
+                        Background="Transparent" 
+                        BorderThickness="0" 
+                        Width="32" 
+                        Height="32" 
+                        Padding="0" 
+                        CornerRadius="16" 
+                        Margin="0,0,0,12" 
+                        Visibility="Collapsed"
+                        Click="OnBackClicked">
+                    <FontIcon Glyph="&#xE72B;" FontSize="14" FontFamily="Segoe Fluent Icons"/>
+                </Button>
+
+                <!-- Image Header -->
+                <Border x:Name="ArticleImageBorder" CornerRadius="8" HorizontalAlignment="Left">
+                    <Image x:Name="ArticleImage" Height="220" Stretch="UniformToFill" HorizontalAlignment="Left"/>
+                </Border>
+
+                <!-- Title -->
+                <TextBlock x:Name="DetailTitle" FontSize="24" FontWeight="SemiBold" TextWrapping="Wrap"/>
+
+                <!-- Metadata Row -->
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8">
+                        <Image x:Name="DetailFeedIcon" Width="16" Height="16" Stretch="UniformToFill" VerticalAlignment="Center" Visibility="Collapsed"/>
+                        <TextBlock x:Name="FeedMeta" FontSize="13" FontWeight="Medium" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <TextBlock x:Name="DateMeta" Grid.Column="1" FontSize="12" Foreground="{ThemeResource TextFillColorTertiaryBrush}"/>
+                </Grid>
+
+                <!-- Separator -->
+                <Border Height="1" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="0,0,0,1"/>
+
+                <!-- Content Body -->
+                <TextBlock x:Name="BodyText" FontSize="15" TextWrapping="Wrap" LineHeight="22"/>
+
+                <!-- Action Buttons -->
+                <StackPanel Orientation="Horizontal" Spacing="12" Margin="0,12,0,0">
+                    <Button x:Name="OpenBrowserButton" Click="OnOpenInBrowserClicked"
+                            Background="{ThemeResource SystemAccentColorBrush}" 
+                            Foreground="White"/>
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</Page>
