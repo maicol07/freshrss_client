@@ -227,7 +227,6 @@
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
                 <TextBlock x:Name="TitleText" Grid.Column="0" 
@@ -267,19 +266,7 @@
                     <FontIcon Glyph="&#xE8BC;" FontSize="14" FontFamily="Segoe Fluent Icons"/>
                 </Button>
 
-                <ToggleButton x:Name="MultiSelectBtn" Grid.Column="3" 
-                              Background="Transparent" 
-                              BorderThickness="0" 
-                              VerticalAlignment="Center" 
-                              Width="32" 
-                              Height="32" 
-                              Padding="0" 
-                              CornerRadius="16" 
-                              Margin="0,0,6,0">
-                    <FontIcon Glyph="&#xE762;" FontSize="14" FontFamily="Segoe Fluent Icons"/>
-                </ToggleButton>
-
-                <Button x:Name="LayoutBtn" Grid.Column="4" 
+                <Button x:Name="LayoutBtn" Grid.Column="3" 
                         Background="Transparent" 
                         BorderThickness="0" 
                         VerticalAlignment="Center" 
@@ -292,7 +279,7 @@
                     <FontIcon x:Name="LayoutBtnIcon" Glyph="&#xE118;" FontSize="14" FontFamily="Segoe Fluent Icons"/>
                 </Button>
 
-                <Button x:Name="RefreshBtn" Grid.Column="5" 
+                <Button x:Name="RefreshBtn" Grid.Column="4" 
                         Background="Transparent" 
                         BorderThickness="0" 
                         VerticalAlignment="Center" 

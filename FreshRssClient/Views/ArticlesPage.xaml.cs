@@ -66,15 +66,6 @@ namespace FreshRssClient.Views
             
             // Set bindings for static elements
             RefreshBtn.Command = _viewModel.SyncCommand;
-            
-            // Bind multiselect button
-            var binding = new Binding
-            {
-                Source = _viewModel,
-                Path = new PropertyPath(nameof(MainViewModel.IsHeaderToggleActive)),
-                Mode = BindingMode.TwoWay
-            };
-            MultiSelectBtn.SetBinding(ToggleButton.IsCheckedProperty, binding);
 
             UpdateFilterVisuals();
             UpdateLocalizations();
@@ -156,7 +147,6 @@ namespace FreshRssClient.Views
 
             ToolTipService.SetToolTip(RefreshBtn, LocalizationManager.Current.SyncNowButton);
             ToolTipService.SetToolTip(MarkAllReadBtn, LocalizationManager.Current.MarkAllAsRead);
-            ToolTipService.SetToolTip(MultiSelectBtn, LocalizationManager.CurrentLanguageCode == "it" ? "Selezione multipla" : "Multiple selection");
             ToolTipService.SetToolTip(BackButton, LocalizationManager.Current.BackToGridButton);
             
             OpenBrowserButton.Content = LocalizationManager.Current.OpenInBrowser;
@@ -251,18 +241,6 @@ namespace FreshRssClient.Views
             if (_viewModel == null) return;
 
             bool multi = _viewModel.IsMultiSelectMode;
-            bool headerActive = _viewModel.IsHeaderToggleActive;
-
-            var targetMode = headerActive ? ListViewSelectionMode.Multiple : ListViewSelectionMode.Extended;
-
-            if (ArticlesListView.SelectionMode != targetMode)
-            {
-                ArticlesListView.SelectionMode = targetMode;
-            }
-            if (ArticlesGridView.SelectionMode != targetMode)
-            {
-                ArticlesGridView.SelectionMode = targetMode;
-            }
 
             if (!multi)
             {
