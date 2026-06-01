@@ -1,0 +1,32 @@
+name: Build and Upload Artifact
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Publish (win-x64)
+        run: dotnet publish FreshRssClient -c Release -r win-x64 --self-contained -o publish/win-x64
+
+      - name: Upload artifact (win-x64)
+        uses: actions/upload-artifact@v4
+        with:
+          name: FreshRssClient-win-x64
+          path: publish/win-x64
