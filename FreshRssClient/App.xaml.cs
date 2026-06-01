@@ -1,7 +1,4 @@
-using Windows.ApplicationModel;
-using Windows.ApplicationModel.Activation;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
+using Microsoft.Windows.AppLifecycle;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
@@ -11,18 +8,13 @@ using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
 using Microsoft.UI.Xaml.Shapes;
 using System.Threading.Tasks;
-
-// To learn more about WinUI, the WinUI project structure,
-// and more about our project templates, see: http://aka.ms/winui-project-info.
+using Windows.ApplicationModel.Activation;
 
 namespace FreshRssClient;
 
-/// <summary>
-/// Provides application-specific behavior to supplement the default Application class.
-/// </summary>
 public partial class App : Application
 {
-    private Window? _window;
+    private MainWindow? _mainWindow;
     
     /// <summary>
     /// Initializes the singleton application object.  This is the first line of authored code
@@ -101,8 +93,19 @@ public partial class App : Application
                 // Fallback for environments where COM/shell32 explicit AppID registration fails
             }
 
-            _window = new MainWindow();
-            _window.Activate();
+            var thisInstance = AppInstance.FindOrRegisterForKey("FreshRssClient_SingleInstance");
+
+            if (!thisInstance.IsCurrent)
+            {
+                thisInstance.RedirectActivationToAsync(AppInstance.GetCurrent().GetActivatedEventArgs());
+                Environment.Exit(0);
+                return;
+            }
+
+            thisInstance.Activated += OnAppInstanceActivated;
+
+            _mainWindow = new MainWindow();
+            _mainWindow.Activate();
         }
         catch (Exception ex)
         {
@@ -116,5 +119,22 @@ public partial class App : Application
             catch { }
             throw;
         }
+    }
+
+    private void OnAppInstanceActivated(object? sender, AppActivationArguments e)
+    {
+        if (_mainWindow == null) return;
+
+        _mainWindow.DispatcherQueue.TryEnqueue(() =>
+        {
+            if (e.Data is ToastNotificationActivatedEventArgs toastArgs)
+            {
+                _mainWindow.ActivateFromToast(toastArgs.Argument);
+            }
+            else
+            {
+                _mainWindow.ActivateFromExternal();
+            }
+        });
     }
 }
