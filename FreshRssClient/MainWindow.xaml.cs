@@ -333,5 +333,22 @@ namespace FreshRssClient
             }
             return null;
         }
+    
+        public void ActivateFromExternal()
+        {
+            _trayIconHelper.RestoreFromTray();
+        }
+
+        public void ActivateFromToast(string argument)
+        {
+            _trayIconHelper.RestoreFromTray();
+
+            if (argument.StartsWith("articleId="))
+            {
+                var articleId = argument.Substring("articleId=".Length);
+                _viewModel.SelectAllArticles();
+                _viewModel.SelectArticleById(articleId);
+            }
+        }
     }
 }

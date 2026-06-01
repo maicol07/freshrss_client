@@ -538,6 +538,13 @@ namespace FreshRssClient.ViewModels
             }
         }
 
+        public void SelectArticleById(string articleId)
+        {
+            var article = Articles.FirstOrDefault(a => a.Id == articleId);
+            if (article != null)
+                SelectedArticle = article;
+        }
+
         private RssArticle? _selectedArticle;
         public RssArticle? SelectedArticle
         {

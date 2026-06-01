@@ -33,7 +33,7 @@ namespace FreshRssClient.Services
                 }
 
                 var toastXmlString = $@"
-                <toast>
+                <toast launch='articleId={SecurityElement.Escape(articleId)}'>
                     <visual>
                         <binding template='ToastGeneric'>
                             <text>{titleEscaped}</text>
