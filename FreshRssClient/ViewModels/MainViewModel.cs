@@ -227,6 +227,39 @@ namespace FreshRssClient.ViewModels
             OnPropertyChanged(nameof(HasSelectedArticles));
         }
 
+        public void ToggleSelectAll()
+        {
+            bool allSelected = Articles.Count > 0 && Articles.All(a => a.IsSelected);
+            
+            _suppressSelectionCallback = true;
+            try
+            {
+                foreach (var article in Articles)
+                {
+                    article.IsSelected = !allSelected;
+                }
+                
+                SelectedArticles.Clear();
+                if (!allSelected)
+                {
+                    SelectedArticles.AddRange(Articles);
+                    IsMultiSelectMode = true;
+                }
+                else
+                {
+                    IsMultiSelectMode = false;
+                }
+            }
+            finally
+            {
+                _suppressSelectionCallback = false;
+            }
+            
+            OnPropertyChanged(nameof(SelectedArticlesCountText));
+            OnPropertyChanged(nameof(HasSelectedArticles));
+            OnPropertyChanged(nameof(IsMultiSelectMode));
+        }
+
         private void AttachCommands(RssArticle article)
         {
             article.MarkAsReadCommand = new RelayCommand(() => SafeFireAndForget.Run(() => MarkArticleAsReadAsync(article)));
@@ -954,7 +987,7 @@ namespace FreshRssClient.ViewModels
             });
         }
 
-        private async Task MarkArticleAsReadAsync(RssArticle article)
+        public async Task MarkArticleAsReadAsync(RssArticle article)
         {
             if (article.IsRead) return;
 
@@ -981,6 +1014,23 @@ namespace FreshRssClient.ViewModels
                 // If api succeeded, remove from pending reads
                 RemovePendingRead(article.Id);
             }
+        }
+
+        public async Task MarkArticleAsUnreadAsync(RssArticle article)
+        {
+            if (!article.IsRead) return;
+
+            // Mark as unread locally immediately for smooth UI transition
+            article.IsRead = false;
+            
+            // Increment feed and category unread counts locally for real-time sidebar badge updates
+            UpdateLocalUnreadCountsForUnread(article.FeedId);
+
+            // Update local cache so that this article's read status is saved offline
+            UpdateArticleReadStatusInCache(article.Id, false);
+
+            // Call API
+            await _freshRssService.MarkAsUnreadAsync(article.Id);
         }
 
         public async Task MarkAsReadAndOpenBrowserAsync(RssArticle article)
@@ -1304,6 +1354,25 @@ namespace FreshRssClient.ViewModels
             });
         }
 
+        private void UpdateLocalUnreadCountsForUnread(string feedId)
+        {
+            EnqueueOnDispatcher(() =>
+            {
+                foreach (var cat in Categories)
+                {
+                    var feed = cat.Feeds.FirstOrDefault(f => f.Id == feedId);
+                    if (feed != null)
+                    {
+                        feed.UnreadCount++;
+                        cat.UnreadCount++;
+                        break;
+                    }
+                }
+
+                UnreadCount++;
+            });
+        }
+
         public async Task MarkAllAsReadInActiveStreamAsync()
         {
             var unreadArticles = Articles.Where(a => !a.IsRead).ToList();
@@ -1382,6 +1451,9 @@ namespace FreshRssClient.ViewModels
             }).ToList();
 
             await Task.WhenAll(tasks);
+
+            // Also call bulk mark-all-as-read API on the server
+            await _freshRssService.MarkAllAsReadAsync(ActiveStreamId);
         }
 
         public async Task MarkSelectedAsReadAsync()

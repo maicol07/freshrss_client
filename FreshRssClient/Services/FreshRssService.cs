@@ -238,6 +238,7 @@ namespace FreshRssClient.Services
         Task<bool> AuthenticateAsync(string serverUrl, string username, string apiPassword, CancellationToken cancellationToken = default);
         Task<List<RssArticle>> FetchArticlesAsync(string? streamId, bool showUnreadOnly, int maxReadArticles, bool enableOpenGraphScrape, string? searchQuery = null, CancellationToken cancellationToken = default);
         Task<bool> MarkAsReadAsync(string articleId, CancellationToken cancellationToken = default);
+        Task<bool> MarkAsUnreadAsync(string articleId, CancellationToken cancellationToken = default);
         Task<bool> MarkAllAsReadAsync(string? streamId, CancellationToken cancellationToken = default);
         Task<(List<RssCategory> Categories, List<RssFeed> Feeds)> FetchSubscriptionsAndUnreadCountsAsync(CancellationToken cancellationToken = default);
     }
@@ -496,6 +497,35 @@ namespace FreshRssClient.Services
                 {
                     new KeyValuePair<string, string>("i", articleId),
                     new KeyValuePair<string, string>("a", "user/-/state/com.google/read")
+                };
+
+                var requestContent = new FormUrlEncodedContent(data);
+                var response = await _httpClient.PostAsync(editTagUrl, requestContent, cancellationToken);
+                
+                return response.IsSuccessStatusCode;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        public async Task<bool> MarkAsUnreadAsync(string articleId, CancellationToken cancellationToken = default)
+        {
+            if (!_isAuthenticated)
+            {
+                return false;
+            }
+
+            try
+            {
+                // GReader API marking unread is done via POST to /reader/api/0/edit-tag with r=...
+                var editTagUrl = $"{_serverUrl}/reader/api/0/edit-tag";
+                
+                var data = new List<KeyValuePair<string, string>>
+                {
+                    new KeyValuePair<string, string>("i", articleId),
+                    new KeyValuePair<string, string>("r", "user/-/state/com.google/read")
                 };
 
                 var requestContent = new FormUrlEncodedContent(data);

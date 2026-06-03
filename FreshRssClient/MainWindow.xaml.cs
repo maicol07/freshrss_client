@@ -32,7 +32,7 @@ namespace FreshRssClient
             {
                 this.SystemBackdrop = new MicaBackdrop();
                 ExtendsContentIntoTitleBar = true;
-                SetTitleBar(AppNavigationView);
+                SetTitleBar(AppTitleBar);
                 AppWindow.SetIcon("Assets/AppIcon.ico");
 
                 _viewModel = new MainViewModel();
@@ -88,6 +88,7 @@ namespace FreshRssClient
 
                 _viewModel.PropertyChanged += OnViewModelPropertyChanged;
                 AppNavigationView.IsBackEnabled = false;
+                AppTitleBar.IsBackButtonEnabled = false;
             }
             catch (Exception ex)
             {
@@ -109,6 +110,17 @@ namespace FreshRssClient
                 _viewModel.SelectedArticle = null;
         }
 
+        private void OnTitleBarBackRequested(TitleBar sender, object args)
+        {
+            if (_viewModel?.SelectedArticle != null)
+                _viewModel.SelectedArticle = null;
+        }
+
+        private void OnTitleBarPaneToggleRequested(TitleBar sender, object args)
+        {
+            AppNavigationView.IsPaneOpen = !AppNavigationView.IsPaneOpen;
+        }
+
         private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName == nameof(MainViewModel.SelectedArticle))
@@ -116,6 +128,7 @@ namespace FreshRssClient
                 this.DispatcherQueue.TryEnqueue(() =>
                 {
                     AppNavigationView.IsBackEnabled = _viewModel.SelectedArticle != null;
+                    AppTitleBar.IsBackButtonEnabled = _viewModel.SelectedArticle != null;
                 });
             }
         }

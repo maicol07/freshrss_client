@@ -564,6 +564,11 @@ namespace FreshRssClient.Tests
             return Task.FromResult(MarkAsReadResult);
         }
 
+        public Task<bool> MarkAsUnreadAsync(string articleId, CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(true);
+        }
+
         public Task<bool> MarkAllAsReadAsync(string? streamId, CancellationToken cancellationToken = default)
         {
             MarkAllAsReadCallCount++;

@@ -20,6 +20,7 @@ namespace FreshRssClient.Views
     {
         private MainViewModel? _viewModel;
         private bool _isUpdatingSelection = false;
+        private RssArticle? _contextArticle;
 
         public ArticlesPage()
         {
@@ -60,10 +61,14 @@ namespace FreshRssClient.Views
             // Initialize texts
             TitleText.Text = _viewModel.UnreadCountHeaderText;
             SyncStatusText.Text = _viewModel.SyncStatusText;
-            ProgressIndicator.IsActive = _viewModel.IsSyncing;
             ProgressIndicator.Visibility = _viewModel.IsSyncing ? Visibility.Visible : Visibility.Collapsed;
             SelectedCountText.Text = _viewModel.SelectedArticlesCountText;
             
+            // Initialize checked states of filter items
+            ShowUnreadItem.IsChecked = _viewModel.ArticleFilter == "Unread";
+            ShowReadItem.IsChecked = _viewModel.ArticleFilter == "Read";
+            ShowAllItem.IsChecked = _viewModel.ArticleFilter == "All";
+
             // Set bindings for static elements
             RefreshBtn.Command = _viewModel.SyncCommand;
 
@@ -97,7 +102,6 @@ namespace FreshRssClient.Views
                         break;
 
                     case nameof(MainViewModel.IsSyncing):
-                        ProgressIndicator.IsActive = _viewModel.IsSyncing;
                         ProgressIndicator.Visibility = _viewModel.IsSyncing ? Visibility.Visible : Visibility.Collapsed;
                         break;
 
@@ -146,6 +150,7 @@ namespace FreshRssClient.Views
             ShowAllItem.Text = LocalizationManager.Current.FilterAll;
 
             ToolTipService.SetToolTip(RefreshBtn, LocalizationManager.Current.SyncNowButton);
+            ToolTipService.SetToolTip(SelectAllBtn, LocalizationManager.Current.SelectAll);
             
             OpenBrowserButton.Content = LocalizationManager.Current.OpenInBrowser;
             
@@ -161,6 +166,13 @@ namespace FreshRssClient.Views
             {
                 FilterBtn.Background = (Brush)Application.Current.Resources["SystemAccentColorBrush"];
                 FilterBtn.Foreground = new SolidColorBrush(Microsoft.UI.Colors.White);
+
+                // Override hover and pressed states when active so background does not disappear
+                FilterBtn.Resources["ButtonBackgroundPointerOver"] = new SolidColorBrush((Windows.UI.Color)Application.Current.Resources["SystemAccentColorLight1"]);
+                FilterBtn.Resources["ButtonBackgroundPressed"] = new SolidColorBrush((Windows.UI.Color)Application.Current.Resources["SystemAccentColorDark1"]);
+                FilterBtn.Resources["ButtonForegroundPointerOver"] = new SolidColorBrush(Microsoft.UI.Colors.White);
+                FilterBtn.Resources["ButtonForegroundPressed"] = new SolidColorBrush(Microsoft.UI.Colors.White);
+
                 string filterName = _viewModel.ArticleFilter == "Unread" 
                     ? LocalizationManager.Current.FilterUnread 
                     : LocalizationManager.Current.FilterRead;
@@ -170,6 +182,13 @@ namespace FreshRssClient.Views
             {
                 FilterBtn.Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
                 FilterBtn.Foreground = (Brush)Application.Current.Resources["TextFillColorPrimaryBrush"];
+
+                // Remove overrides for transparent default look
+                FilterBtn.Resources.Remove("ButtonBackgroundPointerOver");
+                FilterBtn.Resources.Remove("ButtonBackgroundPressed");
+                FilterBtn.Resources.Remove("ButtonForegroundPointerOver");
+                FilterBtn.Resources.Remove("ButtonForegroundPressed");
+
                 ToolTipService.SetToolTip(FilterBtn, LocalizationManager.Current.FilterLabel);
             }
         }
@@ -194,14 +213,26 @@ namespace FreshRssClient.Views
                     Grid.SetColumnSpan(LeftGrid, 2);
                     
                     RightScroll.Visibility = Visibility.Collapsed;
+                    DetailFrame.Visibility = Visibility.Collapsed;
+                    DetailFrame.Content = null;
                 }
                 else
                 {
                     LeftGrid.Visibility = Visibility.Collapsed;
-                    
-                    RightScroll.Visibility = Visibility.Visible;
-                    Grid.SetColumn(RightScroll, 0);
-                    Grid.SetColumnSpan(RightScroll, 2);
+                    RightScroll.Visibility = Visibility.Collapsed;
+                    DetailFrame.Visibility = Visibility.Visible;
+                    Grid.SetColumn(DetailFrame, 0);
+                    Grid.SetColumnSpan(DetailFrame, 2);
+
+                    if (DetailFrame.Content is ArticleDetailPage detailPage && DetailFrame.DataContext == _viewModel.SelectedArticle)
+                    {
+                        // Already navigated
+                    }
+                    else
+                    {
+                        DetailFrame.DataContext = _viewModel.SelectedArticle;
+                        DetailFrame.Navigate(typeof(ArticleDetailPage), _viewModel.SelectedArticle, new DrillInNavigationTransitionInfo());
+                    }
                 }
             }
             else
@@ -215,6 +246,9 @@ namespace FreshRssClient.Views
                 Grid.SetColumn(LeftGrid, 0);
                 Grid.SetColumnSpan(LeftGrid, 1);
 
+                DetailFrame.Visibility = Visibility.Collapsed;
+                DetailFrame.Content = null;
+
                 RightScroll.Visibility = _viewModel.SelectedArticle != null && !_viewModel.IsMultiSelectMode ? Visibility.Visible : Visibility.Collapsed;
                 Grid.SetColumn(RightScroll, 1);
                 Grid.SetColumnSpan(RightScroll, 1);
@@ -224,7 +258,7 @@ namespace FreshRssClient.Views
             }
 
             // Update layout button icon and tooltip
-            LayoutBtnIcon.Glyph = useGrid ? "\uE292" : "\uE118";
+            LayoutBtnIcon.Glyph = useGrid ? "\uEC3E" : "\uE8FD";
             ToolTipService.SetToolTip(LayoutBtn, useGrid ? 
                 (LocalizationManager.CurrentLanguageCode == "it" ? "Visualizzazione elenco" : "List view") :
                 (LocalizationManager.CurrentLanguageCode == "it" ? "Visualizzazione griglia" : "Grid view"));
@@ -496,6 +530,194 @@ namespace FreshRssClient.Views
                     // Ignore launch failures
                 }
             }
+        }
+
+        private void OnSelectAllClicked(object sender, RoutedEventArgs e)
+        {
+            if (_viewModel == null) return;
+            _viewModel.ToggleSelectAll();
+            
+            // Synchronize selection in ListView or GridView
+            _isUpdatingSelection = true;
+            try
+            {
+                var selector = _viewModel.UseGridLayout ? (ListViewBase)ArticlesGridView : (ListViewBase)ArticlesListView;
+                selector.SelectedItems.Clear();
+                if (_viewModel.IsMultiSelectMode)
+                {
+                    foreach (var article in _viewModel.Articles)
+                    {
+                        selector.SelectedItems.Add(article);
+                    }
+                }
+            }
+            finally
+            {
+                _isUpdatingSelection = false;
+            }
+        }
+
+        private void OnItemPointerPressed(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
+        {
+            if (_viewModel == null) return;
+
+            var properties = e.GetCurrentPoint(sender as UIElement).Properties;
+            if (properties.IsMiddleButtonPressed)
+            {
+                e.Handled = true;
+
+                // Toggle selection for this article
+                var element = sender as FrameworkElement;
+                if (element?.DataContext is RssArticle article)
+                {
+                    article.IsSelected = !article.IsSelected;
+
+                    // Build list of selected articles
+                    var selectedList = new List<RssArticle>();
+                    foreach (var a in _viewModel.Articles)
+                    {
+                        if (a.IsSelected)
+                        {
+                            selectedList.Add(a);
+                        }
+                    }
+
+                    _isUpdatingSelection = true;
+                    try
+                    {
+                        if (selectedList.Count > 0)
+                        {
+                            _viewModel.IsMultiSelectMode = true;
+                            _viewModel.SetSelectedArticles(selectedList);
+
+                            // Synchronize SelectedItems of the active list/grid control
+                            var selector = _viewModel.UseGridLayout ? (ListViewBase)ArticlesGridView : (ListViewBase)ArticlesListView;
+                            selector.SelectedItems.Clear();
+                            foreach (var a in selectedList)
+                            {
+                                selector.SelectedItems.Add(a);
+                            }
+                        }
+                        else
+                        {
+                            _viewModel.IsMultiSelectMode = false;
+                            _viewModel.SelectedArticle = null;
+                            ArticlesListView.SelectedItems.Clear();
+                            ArticlesGridView.SelectedItems.Clear();
+                        }
+                    }
+                    finally
+                    {
+                        _isUpdatingSelection = false;
+                    }
+
+                    // Explicitly trigger apply visual updates
+                    ApplyLayoutMode();
+                }
+            }
+        }
+
+        private void OnArticleContextFlyoutOpening(object sender, object e)
+        {
+            if (_viewModel == null) return;
+
+            if (sender is MenuFlyout flyout && flyout.Target is FrameworkElement element && element.DataContext is RssArticle article)
+            {
+                _contextArticle = article;
+
+                // Update ContextToggleReadItem
+                ContextToggleReadItem.Text = article.IsRead 
+                    ? (LocalizationManager.CurrentLanguageCode == "it" ? "Segna come da leggere" : "Mark as unread")
+                    : (LocalizationManager.CurrentLanguageCode == "it" ? "Segna come letto" : "Mark as read");
+                
+                if (ContextToggleReadItem.Icon is SymbolIcon symbolIcon)
+                {
+                    symbolIcon.Symbol = article.IsRead ? Symbol.Document : Symbol.Read;
+                }
+
+                // Update ContextOpenBrowserItem text
+                ContextOpenBrowserItem.Text = LocalizationManager.Current.OpenInBrowser;
+
+                // Update ContextSelectItem text
+                ContextSelectItem.Text = article.IsSelected
+                    ? (LocalizationManager.CurrentLanguageCode == "it" ? "Deseleziona" : "Deselect")
+                    : (LocalizationManager.CurrentLanguageCode == "it" ? "Seleziona" : "Select");
+            }
+        }
+
+        private async void OnContextToggleReadClicked(object sender, RoutedEventArgs e)
+        {
+            if (_viewModel == null || _contextArticle == null) return;
+
+            if (_contextArticle.IsRead)
+            {
+                await _viewModel.MarkArticleAsUnreadAsync(_contextArticle);
+            }
+            else
+            {
+                await _viewModel.MarkArticleAsReadAsync(_contextArticle);
+            }
+        }
+
+        private async void OnContextOpenInBrowserClicked(object sender, RoutedEventArgs e)
+        {
+            if (_viewModel == null || _contextArticle == null || string.IsNullOrEmpty(_contextArticle.Link)) return;
+
+            try
+            {
+                var uri = new Uri(_contextArticle.Link);
+                await Launcher.LaunchUriAsync(uri);
+                
+                await _viewModel.MarkArticleAsReadAsync(_contextArticle);
+            }
+            catch { }
+        }
+
+        private void OnContextSelectClicked(object sender, RoutedEventArgs e)
+        {
+            if (_viewModel == null || _contextArticle == null) return;
+
+            _contextArticle.IsSelected = !_contextArticle.IsSelected;
+
+            // Sync SelectedArticles
+            var selectedList = new List<RssArticle>();
+            foreach (var a in _viewModel.Articles)
+            {
+                if (a.IsSelected)
+                {
+                    selectedList.Add(a);
+                }
+            }
+
+            _isUpdatingSelection = true;
+            try
+            {
+                if (selectedList.Count > 0)
+                {
+                    _viewModel.IsMultiSelectMode = true;
+                    _viewModel.SetSelectedArticles(selectedList);
+
+                    var selector = _viewModel.UseGridLayout ? (ListViewBase)ArticlesGridView : (ListViewBase)ArticlesListView;
+                    selector.SelectedItems.Clear();
+                    foreach (var a in selectedList)
+                    {
+                        selector.SelectedItems.Add(a);
+                    }
+                }
+                else
+                {
+                    _viewModel.IsMultiSelectMode = false;
+                    _viewModel.SelectedArticle = null;
+                    ArticlesListView.SelectedItems.Clear();
+                    ArticlesGridView.SelectedItems.Clear();
+                }
+            }
+            finally
+            {
+                _isUpdatingSelection = false;
+            }
+
+            ApplyLayoutMode();
         }
     }
 

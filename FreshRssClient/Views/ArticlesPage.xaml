@@ -11,9 +11,28 @@
     <Page.Resources>
         <views:StringToImageSourceConverter x:Key="ImageConverter"/>
 
+        <!-- Right-click Context Menu Resource -->
+        <MenuFlyout x:Key="ArticleContextFlyout" Opening="OnArticleContextFlyoutOpening">
+            <MenuFlyoutItem x:Name="ContextToggleReadItem" Click="OnContextToggleReadClicked">
+                <MenuFlyoutItem.Icon>
+                    <SymbolIcon Symbol="Read"/>
+                </MenuFlyoutItem.Icon>
+            </MenuFlyoutItem>
+            <MenuFlyoutItem x:Name="ContextOpenBrowserItem" Click="OnContextOpenInBrowserClicked">
+                <MenuFlyoutItem.Icon>
+                    <SymbolIcon Symbol="Globe"/>
+                </MenuFlyoutItem.Icon>
+            </MenuFlyoutItem>
+            <MenuFlyoutItem x:Name="ContextSelectItem" Click="OnContextSelectClicked">
+                <MenuFlyoutItem.Icon>
+                    <SymbolIcon Symbol="SelectAll"/>
+                </MenuFlyoutItem.Icon>
+            </MenuFlyoutItem>
+        </MenuFlyout>
+
         <!-- ListView Item Template -->
         <DataTemplate x:Key="ArticleListTemplate" x:DataType="services:RssArticle">
-            <Grid Padding="12,10">
+            <Grid Padding="12,10" ContextFlyout="{StaticResource ArticleContextFlyout}" PointerPressed="OnItemPointerPressed">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
@@ -110,7 +129,9 @@
                     Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" 
                     CornerRadius="8" 
                     BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" 
-                    BorderThickness="1">
+                    BorderThickness="1"
+                    ContextFlyout="{StaticResource ArticleContextFlyout}"
+                    PointerPressed="OnItemPointerPressed">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="120"/>
@@ -226,6 +247,7 @@
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
                 <TextBlock x:Name="TitleText" Grid.Column="0" 
@@ -252,7 +274,20 @@
                     </Button.Flyout>
                 </Button>
 
-                <Button x:Name="LayoutBtn" Grid.Column="2" 
+                <Button x:Name="SelectAllBtn" Grid.Column="2"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        VerticalAlignment="Center"
+                        Width="32"
+                        Height="32"
+                        Padding="0"
+                        CornerRadius="16"
+                        Margin="0,0,6,0"
+                        Click="OnSelectAllClicked">
+                    <FontIcon Glyph="&#xE762;" FontSize="14" FontFamily="Segoe Fluent Icons"/>
+                </Button>
+
+                <Button x:Name="LayoutBtn" Grid.Column="3" 
                         Background="Transparent" 
                         BorderThickness="0" 
                         VerticalAlignment="Center" 
@@ -262,10 +297,10 @@
                         CornerRadius="16" 
                         Margin="0,0,6,0"
                         Click="OnLayoutClicked">
-                    <FontIcon x:Name="LayoutBtnIcon" Glyph="&#xE118;" FontSize="14" FontFamily="Segoe Fluent Icons"/>
+                    <FontIcon x:Name="LayoutBtnIcon" Glyph="&#xE8FD;" FontSize="14" FontFamily="Segoe Fluent Icons"/>
                 </Button>
 
-                <Button x:Name="RefreshBtn" Grid.Column="3" 
+                <Button x:Name="RefreshBtn" Grid.Column="4" 
                         Background="Transparent" 
                         BorderThickness="0" 
                         VerticalAlignment="Center" 
@@ -278,14 +313,12 @@
                 </Button>
             </Grid>
 
-            <!-- ProgressRing -->
-            <ProgressRing x:Name="ProgressIndicator" Grid.Row="1" 
-                          IsActive="False" 
-                          Width="20" 
-                          Height="20" 
-                          Margin="0,8,0,8" 
-                          HorizontalAlignment="Center" 
-                          Visibility="Collapsed"/>
+            <!-- Premium Indeterminate ProgressBar -->
+            <ProgressBar x:Name="ProgressIndicator" Grid.Row="1" 
+                         IsIndeterminate="True" 
+                         Height="3" 
+                         Margin="0,0,0,4"
+                         Visibility="Collapsed"/>
 
             <!-- ListView (Split Layout) -->
             <ListView x:Name="ArticlesListView" Grid.Row="2" 
@@ -388,5 +421,8 @@
                 </StackPanel>
             </StackPanel>
         </ScrollViewer>
+
+        <!-- Column 1: Article Content Viewer Frame (for Grid Layout page transitions) -->
+        <Frame x:Name="DetailFrame" Grid.Column="1" Visibility="Collapsed"/>
     </Grid>
 </Page>

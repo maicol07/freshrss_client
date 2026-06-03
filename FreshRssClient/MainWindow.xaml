@@ -6,27 +6,44 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
-    <NavigationView x:Name="AppNavigationView"
-                    PaneDisplayMode="Left"
-                    IsSettingsVisible="True"
-                    IsBackButtonVisible="Auto"
-                    IsPaneToggleButtonVisible="True"
-                    AlwaysShowHeader="False"
-                    BackRequested="OnNavigationBackRequested"
-                    SelectionChanged="OnNavigationSelectionChanged"
-                    HorizontalAlignment="Stretch"
-                    VerticalAlignment="Stretch">
-        <NavigationView.PaneHeader>
-            <Grid Padding="12,8">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <TitleBar x:Name="AppTitleBar"
+                  Grid.Row="0"
+                  Title="FreshRSS Client"
+                  IsBackButtonVisible="True"
+                  IsBackButtonEnabled="False"
+                  IsPaneToggleButtonVisible="True"
+                  BackRequested="OnTitleBarBackRequested"
+                  PaneToggleRequested="OnTitleBarPaneToggleRequested">
+            <TitleBar.Content>
                 <AutoSuggestBox x:Name="SearchBox" 
                                 Width="250"
-                                HorizontalAlignment="Stretch"
+                                HorizontalAlignment="Left"
                                 VerticalAlignment="Center"
+                                Margin="12,0,0,0"
                                 QueryIcon="Find"/>
-            </Grid>
-        </NavigationView.PaneHeader>
-        <NavigationView.Content>
-            <Grid x:Name="ContentGrid" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
-        </NavigationView.Content>
-    </NavigationView>
+            </TitleBar.Content>
+        </TitleBar>
+
+        <NavigationView x:Name="AppNavigationView"
+                        Grid.Row="1"
+                        PaneDisplayMode="Left"
+                        IsSettingsVisible="True"
+                        IsBackButtonVisible="Collapsed"
+                        IsPaneToggleButtonVisible="False"
+                        AlwaysShowHeader="False"
+                        BackRequested="OnNavigationBackRequested"
+                        SelectionChanged="OnNavigationSelectionChanged"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch">
+            <NavigationView.Content>
+                <Grid x:Name="ContentGrid" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+            </NavigationView.Content>
+        </NavigationView>
+    </Grid>
 </Window>

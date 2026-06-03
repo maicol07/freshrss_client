@@ -1,0 +1,48 @@
+<Page
+    x:Class="FreshRssClient.Views.ArticleDetailPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <ScrollViewer x:Name="RightScroll" Padding="24" HorizontalAlignment="Stretch" VerticalScrollBarVisibility="Auto">
+        <StackPanel Spacing="16" MaxWidth="800" HorizontalAlignment="Left">
+
+            <!-- Image Header -->
+            <Border x:Name="ArticleImageBorder" CornerRadius="8" HorizontalAlignment="Left">
+                <Image x:Name="ArticleImage" Height="300" MaxWidth="800" Stretch="UniformToFill" HorizontalAlignment="Left"/>
+            </Border>
+
+            <!-- Title -->
+            <TextBlock x:Name="DetailTitle" FontSize="26" FontWeight="SemiBold" TextWrapping="Wrap"/>
+
+            <!-- Metadata Row -->
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8">
+                    <Image x:Name="DetailFeedIcon" Width="16" Height="16" Stretch="UniformToFill" VerticalAlignment="Center" Visibility="Collapsed"/>
+                    <TextBlock x:Name="FeedMeta" FontSize="13" FontWeight="Medium" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <TextBlock x:Name="DateMeta" Grid.Column="1" FontSize="12" Foreground="{ThemeResource TextFillColorTertiaryBrush}"/>
+            </Grid>
+
+            <!-- Separator -->
+            <Border Height="1" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="0,0,0,1"/>
+
+            <!-- Content Body -->
+            <TextBlock x:Name="BodyText" FontSize="15" TextWrapping="Wrap" LineHeight="24" IsTextSelectionEnabled="True"/>
+
+            <!-- Action Buttons -->
+            <StackPanel Orientation="Horizontal" Spacing="12" Margin="0,12,0,0">
+                <Button x:Name="OpenBrowserButton" Click="OnOpenInBrowserClicked"
+                        Background="{ThemeResource SystemAccentColorBrush}" 
+                        Foreground="White"/>
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</Page>

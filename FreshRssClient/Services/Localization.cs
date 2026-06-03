@@ -50,6 +50,7 @@ namespace FreshRssClient.Services
         string MassOpen { get; }
         string SelectedArticlesSuffix { get; }
         string SearchPlaceholder { get; }
+        string SelectAll { get; }
     }
 
     public class EnglishStrings : ILocalization
@@ -98,6 +99,7 @@ namespace FreshRssClient.Services
         public string MassOpen => "Open selected";
         public string SelectedArticlesSuffix => "selected";
         public string SearchPlaceholder => "Search...";
+        public string SelectAll => "Select / Deselect all";
     }
 
     public class ItalianStrings : ILocalization
@@ -146,6 +148,7 @@ namespace FreshRssClient.Services
         public string MassOpen => "Apri selezionati";
         public string SelectedArticlesSuffix => "selezionati";
         public string SearchPlaceholder => "Cerca...";
+        public string SelectAll => "Seleziona / Deseleziona tutto";
     }
 
     public static class LocalizationManager
