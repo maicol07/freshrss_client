@@ -25,6 +25,7 @@ namespace FreshRssClient.Views
         public ArticlesPage()
         {
             this.InitializeComponent();
+            this.Unloaded += OnUnloaded;
 
             // Set grid view styling using a safe, standard style that preserves native Fluent templates
             ArticlesGridView.ItemContainerStyle = (Style)Microsoft.UI.Xaml.Markup.XamlReader.Load(@"
@@ -77,6 +78,9 @@ namespace FreshRssClient.Views
 
             // Subscribe to VM PropertyChanged events
             _viewModel.PropertyChanged += OnViewModelPropertyChanged;
+
+            // Subscribe to Articles collection changes to dynamically toggle empty state
+            _viewModel.Articles.CollectionChanged += OnArticlesCollectionChanged;
 
             // Subscribe to language changes
             LocalizationManager.LanguageChanged += OnLanguageChanged;
@@ -141,6 +145,44 @@ namespace FreshRssClient.Views
             });
         }
 
+        private void OnUnloaded(object sender, RoutedEventArgs e)
+        {
+            if (_viewModel != null)
+            {
+                _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
+                _viewModel.Articles.CollectionChanged -= OnArticlesCollectionChanged;
+            }
+            LocalizationManager.LanguageChanged -= OnLanguageChanged;
+            this.Unloaded -= OnUnloaded;
+        }
+
+        private void OnArticlesCollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        {
+            this.DispatcherQueue.TryEnqueue(() =>
+            {
+                UpdateEmptyState();
+            });
+        }
+
+        private void UpdateEmptyState()
+        {
+            if (_viewModel == null) return;
+            
+            bool isEmpty = _viewModel.Articles.Count == 0;
+            EmptyStateView.Visibility = isEmpty ? Visibility.Visible : Visibility.Collapsed;
+
+            if (isEmpty)
+            {
+                ArticlesListView.Visibility = Visibility.Collapsed;
+                ArticlesGridView.Visibility = Visibility.Collapsed;
+            }
+            else
+            {
+                ArticlesListView.Visibility = _viewModel.UseGridLayout ? Visibility.Collapsed : Visibility.Visible;
+                ArticlesGridView.Visibility = _viewModel.UseGridLayout ? Visibility.Visible : Visibility.Collapsed;
+            }
+        }
+
         private void UpdateLocalizations()
         {
             if (_viewModel == null) return;
@@ -156,6 +198,9 @@ namespace FreshRssClient.Views
             
             MassMarkReadText.Text = LocalizationManager.Current.MassMarkAsRead;
             MassOpenText.Text = LocalizationManager.Current.MassOpen;
+
+            EmptyStateHeader.Text = LocalizationManager.Current.NoArticles;
+            EmptyStateSubtitle.Text = LocalizationManager.Current.NoArticlesSubtitle;
         }
 
         private void UpdateFilterVisuals()
@@ -202,8 +247,6 @@ namespace FreshRssClient.Views
             if (useGrid)
             {
                 // Grid layout
-                ArticlesListView.Visibility = Visibility.Collapsed;
-                ArticlesGridView.Visibility = Visibility.Visible;
                 VerticalDivider.Visibility = Visibility.Collapsed;
 
                 if (_viewModel.SelectedArticle == null)
@@ -238,8 +281,6 @@ namespace FreshRssClient.Views
             else
             {
                 // Split list layout
-                ArticlesListView.Visibility = Visibility.Visible;
-                ArticlesGridView.Visibility = Visibility.Collapsed;
                 VerticalDivider.Visibility = Visibility.Visible;
 
                 LeftGrid.Visibility = Visibility.Visible;
@@ -258,10 +299,13 @@ namespace FreshRssClient.Views
             }
 
             // Update layout button icon and tooltip
-            LayoutBtnIcon.Glyph = useGrid ? "\uEC3E" : "\uE8FD";
+            LayoutBtnIcon.Glyph = useGrid ? "\uE8FD" : "\uE80A";
             ToolTipService.SetToolTip(LayoutBtn, useGrid ? 
                 (LocalizationManager.CurrentLanguageCode == "it" ? "Visualizzazione elenco" : "List view") :
                 (LocalizationManager.CurrentLanguageCode == "it" ? "Visualizzazione griglia" : "Grid view"));
+
+            // Toggle empty state / lists visibility
+            UpdateEmptyState();
         }
 
         private void UpdateMultiSelectMode()

@@ -297,7 +297,7 @@
                         CornerRadius="16" 
                         Margin="0,0,6,0"
                         Click="OnLayoutClicked">
-                    <FontIcon x:Name="LayoutBtnIcon" Glyph="&#xE8FD;" FontSize="14" FontFamily="Segoe Fluent Icons"/>
+                    <FontIcon x:Name="LayoutBtnIcon" Glyph="&#xE80A;" FontSize="14" FontFamily="Segoe Fluent Icons"/>
                 </Button>
 
                 <Button x:Name="RefreshBtn" Grid.Column="4" 
@@ -335,6 +335,17 @@
                       ItemTemplate="{StaticResource ArticleGridTemplate}"
                       Visibility="Collapsed"
                       SelectionChanged="OnArticlesGridViewSelectionChanged"/>
+
+            <!-- Empty State View -->
+            <Grid x:Name="EmptyStateView" Grid.Row="2" Margin="24" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed">
+                <StackPanel Spacing="16" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Border Width="64" Height="64" CornerRadius="32" Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}" BorderThickness="1" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" HorizontalAlignment="Center">
+                        <FontIcon Glyph="&#xE930;" FontSize="28" Foreground="{ThemeResource SystemAccentColorBrush}" VerticalAlignment="Center" HorizontalAlignment="Center" FontFamily="Segoe Fluent Icons"/>
+                    </Border>
+                    <TextBlock x:Name="EmptyStateHeader" FontSize="16" FontWeight="SemiBold" HorizontalAlignment="Center" Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
+                    <TextBlock x:Name="EmptyStateSubtitle" FontSize="13" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" MaxWidth="250" TextAlignment="Center" HorizontalAlignment="Center"/>
+                </StackPanel>
+            </Grid>
 
             <!-- Mass Action Bar -->
             <Grid x:Name="MassMenuBar" Grid.Row="3" 

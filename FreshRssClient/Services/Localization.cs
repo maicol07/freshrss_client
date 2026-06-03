@@ -23,6 +23,7 @@ namespace FreshRssClient.Services
         string SyncError { get; }
         string UnreadArticlesHeader { get; }
         string NoArticles { get; }
+        string NoArticlesSubtitle { get; }
         string MarkAsReadButton { get; }
         string OpenInBrowser { get; }
         string IntervalMinutes { get; }
@@ -72,6 +73,7 @@ namespace FreshRssClient.Services
         public string SyncError => "Synchronization failed: {0}";
         public string UnreadArticlesHeader => "Unread Articles";
         public string NoArticles => "No unread articles. Excellent!";
+        public string NoArticlesSubtitle => "You're all caught up! Enjoy your day.";
         public string MarkAsReadButton => "Mark as Read";
         public string OpenInBrowser => "Read full article in browser";
         public string IntervalMinutes => "{0} minutes";
@@ -121,6 +123,7 @@ namespace FreshRssClient.Services
         public string SyncError => "Errore di sincronizzazione: {0}";
         public string UnreadArticlesHeader => "Articoli non letti";
         public string NoArticles => "Nessun articolo da leggere. Ottimo!";
+        public string NoArticlesSubtitle => "Hai letto tutto! Goditi la giornata.";
         public string MarkAsReadButton => "Segna come letto";
         public string OpenInBrowser => "Leggi l'articolo completo nel browser";
         public string IntervalMinutes => "{0} minuti";
