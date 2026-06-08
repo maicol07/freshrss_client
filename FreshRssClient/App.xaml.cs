@@ -105,7 +105,10 @@ public partial class App : Application
             thisInstance.Activated += OnAppInstanceActivated;
 
             _mainWindow = new MainWindow();
-            _mainWindow.Activate();
+            if (!_mainWindow.ShouldStartMinimized)
+            {
+                _mainWindow.Activate();
+            }
         }
         catch (Exception ex)
         {

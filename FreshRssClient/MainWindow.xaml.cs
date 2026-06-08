@@ -18,6 +18,7 @@ namespace FreshRssClient
         private readonly MainViewModel _viewModel;
         private readonly TrayIconHelper _trayIconHelper;
         public bool IsExiting { get; set; } = false;
+        public bool ShouldStartMinimized { get; private set; } = false;
 
         private ArticlesPage? _articlesPage;
         private SettingsPage? _settingsPage;
@@ -70,23 +71,13 @@ namespace FreshRssClient
                 }
                 catch { }
 
-                bool startMinimized = cmdArgs.Contains("--minimized", StringComparer.OrdinalIgnoreCase) ||
-                                     cmdArgs.Contains("-minimized", StringComparer.OrdinalIgnoreCase) ||
-                                     (isStartupTask && _viewModel.StartMinimizedInTray);
+                ShouldStartMinimized = cmdArgs.Contains("--minimized", StringComparer.OrdinalIgnoreCase) ||
+                                       cmdArgs.Contains("-minimized", StringComparer.OrdinalIgnoreCase) ||
+                                       (isStartupTask && _viewModel.StartMinimizedInTray);
 
-                if (startMinimized)
+                if (ShouldStartMinimized)
                 {
-                    this.Activated += (sender, args) =>
-                    {
-                        if (startMinimized)
-                        {
-                            startMinimized = false;
-                            this.DispatcherQueue.TryEnqueue(() =>
-                            {
-                                _trayIconHelper.MinimizeToTray();
-                            });
-                        }
-                    };
+                    _trayIconHelper.MinimizeToTray();
                 }
 
                 ConfigureSearch();

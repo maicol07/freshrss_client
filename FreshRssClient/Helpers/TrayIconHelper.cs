@@ -201,6 +201,7 @@ namespace FreshRssClient.Helpers
 
         public void RestoreFromTray()
         {
+            _window.Activate();
             ShowWindow(_hwnd, SW_RESTORE);
             SetForegroundWindow(_hwnd);
         }
