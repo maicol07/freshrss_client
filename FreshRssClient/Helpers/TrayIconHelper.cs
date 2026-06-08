@@ -350,6 +350,10 @@ namespace FreshRssClient.Helpers
                 }
                 else if (command == 3)
                 {
+                    if (_window is MainWindow mainWindow)
+                    {
+                        mainWindow.IsExiting = true;
+                    }
                     Application.Current.Exit();
                 }
             }

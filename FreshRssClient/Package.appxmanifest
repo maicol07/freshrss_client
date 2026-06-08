@@ -45,7 +45,7 @@
         <uap:SplashScreen Image="Assets\SplashScreen.png" />
       </uap:VisualElements>
       <Extensions>
-        <desktop:Extension Category="windows.startupTask" Executable="FreshRssClient.exe" EntryPoint="FreshRssClient.App">
+        <desktop:Extension Category="windows.startupTask" Executable="FreshRssClient.exe" EntryPoint="Windows.FullTrustApplication">
           <desktop:StartupTask TaskId="FreshRssClientStartup" Enabled="false" DisplayName="FreshRSS Client" />
         </desktop:Extension>
       </Extensions>

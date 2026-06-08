@@ -58,9 +58,21 @@ namespace FreshRssClient
                 };
 
                 string[] cmdArgs = Environment.GetCommandLineArgs();
+                
+                bool isStartupTask = false;
+                try
+                {
+                    var activatedArgs = Microsoft.Windows.AppLifecycle.AppInstance.GetCurrent().GetActivatedEventArgs();
+                    if (activatedArgs != null && activatedArgs.Kind == Microsoft.Windows.AppLifecycle.ExtendedActivationKind.StartupTask)
+                    {
+                        isStartupTask = true;
+                    }
+                }
+                catch { }
+
                 bool startMinimized = cmdArgs.Contains("--minimized", StringComparer.OrdinalIgnoreCase) ||
                                      cmdArgs.Contains("-minimized", StringComparer.OrdinalIgnoreCase) ||
-                                     _viewModel.StartMinimizedInTray;
+                                     (isStartupTask && _viewModel.StartMinimizedInTray);
 
                 if (startMinimized)
                 {
