@@ -515,6 +515,7 @@ namespace FreshRssClient.Views
             var dialog = new ContentDialog
             {
                 Title = LocalizationManager.CurrentLanguageCode == "it" ? "Conferma" : "Confirm",
+                Style = Application.Current.Resources["DefaultContentDialogStyle"] as Style,
                 Content = string.Format(
                     LocalizationManager.CurrentLanguageCode == "it"
                         ? "Segnare {0} articoli come letti?"
@@ -539,6 +540,7 @@ namespace FreshRssClient.Views
             var dialog = new ContentDialog
             {
                 Title = LocalizationManager.CurrentLanguageCode == "it" ? "Conferma" : "Confirm",
+                Style = Application.Current.Resources["DefaultContentDialogStyle"] as Style,
                 Content = string.Format(
                     LocalizationManager.CurrentLanguageCode == "it"
                         ? "Aprire {0} articoli nel browser?"
