@@ -156,57 +156,37 @@ namespace FreshRssClient.Views
                 SettingsTitle.Text = LocalizationManager.Current.SettingsTab;
 
                 // Account Expander
-                AccountExpander.Header = LocalizationManager.CurrentLanguageCode == "it" ? "Account FreshRSS" : "FreshRSS Account";
-                AccountExpander.Description = LocalizationManager.CurrentLanguageCode == "it" 
-                    ? "Gestisci l'indirizzo del server e le tue credenziali di accesso" 
-                    : "Manage your server address and login credentials";
+                AccountExpander.Header = LocalizationManager.Current.AccountExpanderHeader;
+                AccountExpander.Description = LocalizationManager.Current.AccountExpanderDesc;
 
                 ServerUrlCard.Header = LocalizationManager.Current.ServerUrlLabel;
-                ServerUrlCard.Description = LocalizationManager.CurrentLanguageCode == "it" 
-                    ? "L'URL dell'API Google Reader del tuo FreshRSS" 
-                    : "The Google Reader API URL of your FreshRSS server";
+                ServerUrlCard.Description = LocalizationManager.Current.ServerUrlCardDesc;
 
                 UsernameCard.Header = LocalizationManager.Current.UsernameLabel;
-                UsernameCard.Description = LocalizationManager.CurrentLanguageCode == "it"
-                    ? "Il tuo nome utente di FreshRSS"
-                    : "Your FreshRSS username";
+                UsernameCard.Description = LocalizationManager.Current.UsernameCardDesc;
 
                 PasswordCard.Header = LocalizationManager.Current.ApiPasswordLabel;
-                PasswordCard.Description = LocalizationManager.CurrentLanguageCode == "it"
-                    ? "La chiave API configurata nel tuo profilo FreshRSS"
-                    : "The API password/token configured in your FreshRSS profile";
+                PasswordCard.Description = LocalizationManager.Current.PasswordCardDesc;
 
                 // Sync Expander
-                SyncExpander.Header = LocalizationManager.CurrentLanguageCode == "it" ? "Sincronizzazione e Cache" : "Synchronization & Cache";
-                SyncExpander.Description = LocalizationManager.CurrentLanguageCode == "it"
-                    ? "Configura la frequenza di aggiornamento e i limiti della cache"
-                    : "Configure update frequency and cache limitations";
+                SyncExpander.Header = LocalizationManager.Current.SyncExpanderHeader;
+                SyncExpander.Description = LocalizationManager.Current.SyncExpanderDesc;
 
                 IntervalCard.Header = LocalizationManager.Current.UpdateIntervalLabel;
-                IntervalCard.Description = LocalizationManager.CurrentLanguageCode == "it"
-                    ? "Frequenza di aggiornamento in background dei feed"
-                    : "How often the app refreshes feeds in the background";
+                IntervalCard.Description = LocalizationManager.Current.IntervalCardDesc;
 
                 MaxReadCard.Header = LocalizationManager.Current.MaxReadArticlesLabel;
-                MaxReadCard.Description = LocalizationManager.CurrentLanguageCode == "it"
-                    ? "Numero massimo di articoli già letti da mantenere sincronizzati offline"
-                    : "Maximum number of read articles to keep synchronized offline";
+                MaxReadCard.Description = LocalizationManager.Current.MaxReadCardDesc;
 
                 // Reading Expander
-                ReadingExpander.Header = LocalizationManager.CurrentLanguageCode == "it" ? "Opzioni di Lettura" : "Reading Preferences";
-                ReadingExpander.Description = LocalizationManager.CurrentLanguageCode == "it"
-                    ? "Personalizza il comportamento di lettura e il recupero dei contenuti"
-                    : "Customize reading behavior and content fetching";
+                ReadingExpander.Header = LocalizationManager.Current.ReadingExpanderHeader;
+                ReadingExpander.Description = LocalizationManager.Current.ReadingExpanderDesc;
 
                 OpenGraphCard.Header = LocalizationManager.Current.EnableOpenGraphLabel;
-                OpenGraphCard.Description = LocalizationManager.CurrentLanguageCode == "it"
-                    ? "Scarica immagini di copertina e testo completo degli articoli se non forniti dai feed"
-                    : "Download cover images and full article text if not provided directly by feeds";
+                OpenGraphCard.Description = LocalizationManager.Current.OpenGraphCardDesc;
 
-                DefaultFilterCard.Header = LocalizationManager.CurrentLanguageCode == "it" ? "Filtro predefinito" : "Default filter";
-                DefaultFilterCard.Description = LocalizationManager.CurrentLanguageCode == "it"
-                    ? "Scegli quale filtro applicare automaticamente all'avvio dell'applicazione"
-                    : "Select which filter to automatically apply when starting the application";
+                DefaultFilterCard.Header = LocalizationManager.Current.DefaultFilterCardHeader;
+                DefaultFilterCard.Description = LocalizationManager.Current.DefaultFilterCardDesc;
 
                 int prevFilterIdx = DefaultFilterComboBox.SelectedIndex;
                 DefaultFilterComboBox.Items.Clear();
@@ -216,31 +196,21 @@ namespace FreshRssClient.Views
                 DefaultFilterComboBox.SelectedIndex = prevFilterIdx >= 0 ? prevFilterIdx : 0;
 
                 OpenInBrowserCard.Header = LocalizationManager.Current.OpenLinksInBrowserLabel;
-                OpenInBrowserCard.Description = LocalizationManager.CurrentLanguageCode == "it"
-                    ? "Apri direttamente i link nel browser esterno invece del visualizzatore integrato"
-                    : "Directly open links in your default external browser instead of the built-in viewer";
+                OpenInBrowserCard.Description = LocalizationManager.Current.OpenInBrowserCardDesc;
 
                 // System Expander
-                SystemExpander.Header = LocalizationManager.CurrentLanguageCode == "it" ? "Integrazione di Sistema" : "System Integration";
-                SystemExpander.Description = LocalizationManager.CurrentLanguageCode == "it"
-                    ? "Configura l'avvio automatico e le opzioni della barra delle applicazioni"
-                    : "Configure automatic startup and system tray options";
+                SystemExpander.Header = LocalizationManager.Current.SystemExpanderHeader;
+                SystemExpander.Description = LocalizationManager.Current.SystemExpanderDesc;
 
                 AutoStartCard.Header = LocalizationManager.Current.AutoStartLabel;
-                AutoStartCard.Description = LocalizationManager.CurrentLanguageCode == "it"
-                    ? "Avvia automaticamente l'applicazione all'accesso a Windows"
-                    : "Automatically launch the application when signing in to Windows";
+                AutoStartCard.Description = LocalizationManager.Current.AutoStartCardDesc;
 
                 StartMinimizedCard.Header = LocalizationManager.Current.StartMinimizedLabel;
-                StartMinimizedCard.Description = LocalizationManager.CurrentLanguageCode == "it"
-                    ? "Avvia l'applicazione ridotta nell'area di notifica (tray icon)"
-                    : "Start the application minimized in the system tray notification area";
+                StartMinimizedCard.Description = LocalizationManager.Current.StartMinimizedCardDesc;
 
                 // Language Card
                 LanguageCard.Header = LocalizationManager.Current.LanguageLabel;
-                LanguageCard.Description = LocalizationManager.CurrentLanguageCode == "it"
-                    ? "Scegli la lingua per l'interfaccia dell'applicazione"
-                    : "Choose the language for the application's user interface";
+                LanguageCard.Description = LocalizationManager.Current.LanguageCardDesc;
             }
             finally
             {

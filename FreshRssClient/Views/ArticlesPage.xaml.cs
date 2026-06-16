@@ -301,8 +301,8 @@ namespace FreshRssClient.Views
             // Update layout button icon and tooltip
             LayoutBtnIcon.Glyph = useGrid ? "\uE8FD" : "\uE80A";
             ToolTipService.SetToolTip(LayoutBtn, useGrid ? 
-                (LocalizationManager.CurrentLanguageCode == "it" ? "Visualizzazione elenco" : "List view") :
-                (LocalizationManager.CurrentLanguageCode == "it" ? "Visualizzazione griglia" : "Grid view"));
+                LocalizationManager.Current.ListViewTooltip :
+                LocalizationManager.Current.GridViewTooltip);
 
             // Toggle empty state / lists visibility
             UpdateEmptyState();
@@ -514,15 +514,11 @@ namespace FreshRssClient.Views
             var count = _viewModel.SelectedArticles.Count;
             var dialog = new ContentDialog
             {
-                Title = LocalizationManager.CurrentLanguageCode == "it" ? "Conferma" : "Confirm",
+                Title = LocalizationManager.Current.ConfirmTitle,
                 Style = Application.Current.Resources["DefaultContentDialogStyle"] as Style,
-                Content = string.Format(
-                    LocalizationManager.CurrentLanguageCode == "it"
-                        ? "Segnare {0} articoli come letti?"
-                        : "Mark {0} articles as read?",
-                    count),
-                PrimaryButtonText = LocalizationManager.CurrentLanguageCode == "it" ? "Sì" : "Yes",
-                CloseButtonText = LocalizationManager.CurrentLanguageCode == "it" ? "Annulla" : "Cancel",
+                Content = string.Format(LocalizationManager.Current.ConfirmMarkReadContent, count),
+                PrimaryButtonText = LocalizationManager.Current.YesButton,
+                CloseButtonText = LocalizationManager.Current.CancelButton,
                 DefaultButton = ContentDialogButton.Close,
                 XamlRoot = this.XamlRoot
             };
@@ -539,15 +535,11 @@ namespace FreshRssClient.Views
             var count = _viewModel.SelectedArticles.Count;
             var dialog = new ContentDialog
             {
-                Title = LocalizationManager.CurrentLanguageCode == "it" ? "Conferma" : "Confirm",
+                Title = LocalizationManager.Current.ConfirmTitle,
                 Style = Application.Current.Resources["DefaultContentDialogStyle"] as Style,
-                Content = string.Format(
-                    LocalizationManager.CurrentLanguageCode == "it"
-                        ? "Aprire {0} articoli nel browser?"
-                        : "Open {0} articles in browser?",
-                    count),
-                PrimaryButtonText = LocalizationManager.CurrentLanguageCode == "it" ? "Sì" : "Yes",
-                CloseButtonText = LocalizationManager.CurrentLanguageCode == "it" ? "Annulla" : "Cancel",
+                Content = string.Format(LocalizationManager.Current.ConfirmOpenBrowserContent, count),
+                PrimaryButtonText = LocalizationManager.Current.YesButton,
+                CloseButtonText = LocalizationManager.Current.CancelButton,
                 DefaultButton = ContentDialogButton.Close,
                 XamlRoot = this.XamlRoot
             };
@@ -673,8 +665,8 @@ namespace FreshRssClient.Views
 
                 // Update ContextToggleReadItem
                 ContextToggleReadItem.Text = article.IsRead 
-                    ? (LocalizationManager.CurrentLanguageCode == "it" ? "Segna come da leggere" : "Mark as unread")
-                    : (LocalizationManager.CurrentLanguageCode == "it" ? "Segna come letto" : "Mark as read");
+                    ? LocalizationManager.Current.ContextMarkUnread
+                    : LocalizationManager.Current.ContextMarkRead;
                 
                 if (ContextToggleReadItem.Icon is SymbolIcon symbolIcon)
                 {
@@ -686,8 +678,8 @@ namespace FreshRssClient.Views
 
                 // Update ContextSelectItem text
                 ContextSelectItem.Text = article.IsSelected
-                    ? (LocalizationManager.CurrentLanguageCode == "it" ? "Deseleziona" : "Deselect")
-                    : (LocalizationManager.CurrentLanguageCode == "it" ? "Seleziona" : "Select");
+                    ? LocalizationManager.Current.ContextDeselect
+                    : LocalizationManager.Current.ContextSelect;
             }
         }
 

@@ -177,7 +177,7 @@ namespace FreshRssClient.Helpers
                 uID = _uid,
                 uFlags = NIF_ICON | NIF_TIP,
                 hIcon = icon.Handle,
-                szTip = $"FreshRSS Client - {_lastUnreadCount} " + (LocalizationManager.CurrentLanguageCode == "it" ? "non letti" : "unread")
+                szTip = $"FreshRSS Client - {_lastUnreadCount} {LocalizationManager.Current.UnreadTraySuffix}"
             };
 
             Shell_NotifyIconW(NIM_MODIFY, ref data);
@@ -323,11 +323,9 @@ namespace FreshRssClient.Helpers
             var menu = CreatePopupMenu();
             if (menu == IntPtr.Zero) return;
 
-            bool isIt = LocalizationManager.CurrentLanguageCode == "it";
-            
-            string restoreText = isIt ? "Ripristina Lettore" : "Restore Reader";
-            string syncText = isIt ? "Sincronizza Ora" : "Sync Now";
-            string exitText = isIt ? "Esci" : "Exit";
+            string restoreText = LocalizationManager.Current.TrayRestore;
+            string syncText = LocalizationManager.Current.TraySync;
+            string exitText = LocalizationManager.Current.TrayExit;
 
             AppendMenuW(menu, MF_STRING, new IntPtr(1), restoreText);
             AppendMenuW(menu, MF_STRING, new IntPtr(2), syncText);

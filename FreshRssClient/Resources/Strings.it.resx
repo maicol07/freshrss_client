@@ -1,0 +1,310 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="0" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AppTitle" xml:space="preserve">
+    <value>Lettore FreshRSS</value>
+  </data>
+  <data name="FeedsTab" xml:space="preserve">
+    <value>Articoli</value>
+  </data>
+  <data name="SettingsTab" xml:space="preserve">
+    <value>Impostazioni</value>
+  </data>
+  <data name="ServerUrlLabel" xml:space="preserve">
+    <value>URL Server FreshRSS (deve terminare con greader.php)</value>
+  </data>
+  <data name="UsernameLabel" xml:space="preserve">
+    <value>Nome Utente</value>
+  </data>
+  <data name="ApiPasswordLabel" xml:space="preserve">
+    <value>Password API (configurata nel profilo FreshRSS)</value>
+  </data>
+  <data name="UpdateIntervalLabel" xml:space="preserve">
+    <value>Intervallo di Sincronizzazione (Minuti)</value>
+  </data>
+  <data name="EnableOpenGraphLabel" xml:space="preserve">
+    <value>Abilita OpenGraph (scarica testo ricco e immagini copertina)</value>
+  </data>
+  <data name="LanguageLabel" xml:space="preserve">
+    <value>Lingua</value>
+  </data>
+  <data name="SaveButton" xml:space="preserve">
+    <value>Salva Impostazioni</value>
+  </data>
+  <data name="SavedSuccess" xml:space="preserve">
+    <value>Impostazioni salvate con successo!</value>
+  </data>
+  <data name="SyncNowButton" xml:space="preserve">
+    <value>Sincronizza Ora</value>
+  </data>
+  <data name="SyncingStatus" xml:space="preserve">
+    <value>Sincronizzazione feed...</value>
+  </data>
+  <data name="SyncSuccess" xml:space="preserve">
+    <value>Sincronizzazione completata!</value>
+  </data>
+  <data name="SyncError" xml:space="preserve">
+    <value>Errore di sincronizzazione: {0}</value>
+  </data>
+  <data name="UnreadArticlesHeader" xml:space="preserve">
+    <value>Articoli non letti</value>
+  </data>
+  <data name="NoArticles" xml:space="preserve">
+    <value>Nessun articolo da leggere. Ottimo!</value>
+  </data>
+  <data name="NoArticlesSubtitle" xml:space="preserve">
+    <value>Hai letto tutto! Goditi la giornata.</value>
+  </data>
+  <data name="MarkAsReadButton" xml:space="preserve">
+    <value>Segna come letto</value>
+  </data>
+  <data name="OpenInBrowser" xml:space="preserve">
+    <value>Leggi l'articolo completo nel browser</value>
+  </data>
+  <data name="IntervalMinutes" xml:space="preserve">
+    <value>{0} minuti</value>
+  </data>
+  <data name="StatusConnected" xml:space="preserve">
+    <value>Connesso</value>
+  </data>
+  <data name="StatusDisconnected" xml:space="preserve">
+    <value>Disconnesso (Verifica impostazioni)</value>
+  </data>
+  <data name="NewArticleNotificationTitle" xml:space="preserve">
+    <value>Nuovo articolo da {0}</value>
+  </data>
+  <data name="SettingsSaved" xml:space="preserve">
+    <value>Impostazioni salvate con successo</value>
+  </data>
+  <data name="ShowUnreadOnlyLabel" xml:space="preserve">
+    <value>Mostra solo articoli non letti</value>
+  </data>
+  <data name="MaxReadArticlesLabel" xml:space="preserve">
+    <value>Limite articoli letti da sincronizzare</value>
+  </data>
+  <data name="LimitArticlesCount" xml:space="preserve">
+    <value>{0} articoli</value>
+  </data>
+  <data name="UncategorizedGroup" xml:space="preserve">
+    <value>Senza categoria</value>
+  </data>
+  <data name="OfflineModeStatus" xml:space="preserve">
+    <value>Modalità offline attiva (dati caricati dalla cache)</value>
+  </data>
+  <data name="SyncPendingReadsStatus" xml:space="preserve">
+    <value>Sincronizzazione articoli letti offline...</value>
+  </data>
+  <data name="OpenLinksInBrowserLabel" xml:space="preserve">
+    <value>Apri articoli direttamente nel browser</value>
+  </data>
+  <data name="UseGridLayoutLabel" xml:space="preserve">
+    <value>Usa layout a griglia</value>
+  </data>
+  <data name="AutoStartLabel" xml:space="preserve">
+    <value>Avvia con Windows</value>
+  </data>
+  <data name="StartMinimizedLabel" xml:space="preserve">
+    <value>Avvia ridotto nella tray</value>
+  </data>
+  <data name="BackToGridButton" xml:space="preserve">
+    <value>Torna alla griglia</value>
+  </data>
+  <data name="FilterLabel" xml:space="preserve">
+    <value>Filtra</value>
+  </data>
+  <data name="FilterAll" xml:space="preserve">
+    <value>Tutti gli articoli</value>
+  </data>
+  <data name="FilterUnread" xml:space="preserve">
+    <value>Solo non letti</value>
+  </data>
+  <data name="FilterRead" xml:space="preserve">
+    <value>Solo letti</value>
+  </data>
+  <data name="MarkAllAsRead" xml:space="preserve">
+    <value>Segna tutto come letto</value>
+  </data>
+  <data name="MassMarkAsRead" xml:space="preserve">
+    <value>Segna come letti</value>
+  </data>
+  <data name="MassOpen" xml:space="preserve">
+    <value>Apri selezionati</value>
+  </data>
+  <data name="SelectedArticlesSuffix" xml:space="preserve">
+    <value>selezionati</value>
+  </data>
+  <data name="SearchPlaceholder" xml:space="preserve">
+    <value>Cerca...</value>
+  </data>
+  <data name="SelectAll" xml:space="preserve">
+    <value>Seleziona / Deseleziona tutto</value>
+  </data>
+  
+  <!-- Inline translations for SettingsPage -->
+  <data name="AccountExpanderHeader" xml:space="preserve">
+    <value>Account FreshRSS</value>
+  </data>
+  <data name="AccountExpanderDesc" xml:space="preserve">
+    <value>Gestisci l'indirizzo del server e le tue credenziali di accesso</value>
+  </data>
+  <data name="ServerUrlCardDesc" xml:space="preserve">
+    <value>L'URL dell'API Google Reader del tuo FreshRSS</value>
+  </data>
+  <data name="UsernameCardDesc" xml:space="preserve">
+    <value>Il tuo nome utente di FreshRSS</value>
+  </data>
+  <data name="PasswordCardDesc" xml:space="preserve">
+    <value>La chiave API configurata nel tuo profilo FreshRSS</value>
+  </data>
+  <data name="SyncExpanderHeader" xml:space="preserve">
+    <value>Sincronizzazione e Cache</value>
+  </data>
+  <data name="SyncExpanderDesc" xml:space="preserve">
+    <value>Configura la frequenza di aggiornamento e i limiti della cache</value>
+  </data>
+  <data name="IntervalCardDesc" xml:space="preserve">
+    <value>Frequenza di aggiornamento in background dei feed</value>
+  </data>
+  <data name="MaxReadCardDesc" xml:space="preserve">
+    <value>Numero massimo di articoli già letti da mantenere sincronizzati offline</value>
+  </data>
+  <data name="ReadingExpanderHeader" xml:space="preserve">
+    <value>Opzioni di Lettura</value>
+  </data>
+  <data name="ReadingExpanderDesc" xml:space="preserve">
+    <value>Personalizza il comportamento di lettura e il recupero dei contenuti</value>
+  </data>
+  <data name="OpenGraphCardDesc" xml:space="preserve">
+    <value>Scarica immagini di copertina e testo completo degli articoli se non forniti dai feed</value>
+  </data>
+  <data name="DefaultFilterCardHeader" xml:space="preserve">
+    <value>Filtro predefinito</value>
+  </data>
+  <data name="DefaultFilterCardDesc" xml:space="preserve">
+    <value>Scegli quale filtro applicare automaticamente all'avvio dell'applicazione</value>
+  </data>
+  <data name="OpenInBrowserCardDesc" xml:space="preserve">
+    <value>Apri direttamente i link nel browser esterno invece del visualizzatore integrato</value>
+  </data>
+  <data name="SystemExpanderHeader" xml:space="preserve">
+    <value>Integrazione di Sistema</value>
+  </data>
+  <data name="SystemExpanderDesc" xml:space="preserve">
+    <value>Configura l'avvio automatico e le opzioni della barra delle applicazioni</value>
+  </data>
+  <data name="AutoStartCardDesc" xml:space="preserve">
+    <value>Avvia automaticamente l'applicazione all'accesso a Windows</value>
+  </data>
+  <data name="StartMinimizedCardDesc" xml:space="preserve">
+    <value>Avvia l'applicazione ridotta nell'area di notifica (tray icon)</value>
+  </data>
+  <data name="LanguageCardDesc" xml:space="preserve">
+    <value>Scegli la lingua per l'interfaccia dell'applicazione</value>
+  </data>
+  
+  <!-- Inline translations for ArticlesPage -->
+  <data name="ListViewTooltip" xml:space="preserve">
+    <value>Visualizzazione elenco</value>
+  </data>
+  <data name="GridViewTooltip" xml:space="preserve">
+    <value>Visualizzazione griglia</value>
+  </data>
+  <data name="ConfirmTitle" xml:space="preserve">
+    <value>Conferma</value>
+  </data>
+  <data name="ConfirmMarkReadContent" xml:space="preserve">
+    <value>Segnare {0} articoli come letti?</value>
+  </data>
+  <data name="ConfirmOpenBrowserContent" xml:space="preserve">
+    <value>Aprire {0} articoli nel browser?</value>
+  </data>
+  <data name="YesButton" xml:space="preserve">
+    <value>Sì</value>
+  </data>
+  <data name="CancelButton" xml:space="preserve">
+    <value>Annulla</value>
+  </data>
+  <data name="ContextMarkUnread" xml:space="preserve">
+    <value>Segna come da leggere</value>
+  </data>
+  <data name="ContextMarkRead" xml:space="preserve">
+    <value>Segna come letto</value>
+  </data>
+  <data name="ContextDeselect" xml:space="preserve">
+    <value>Deseleziona</value>
+  </data>
+  <data name="ContextSelect" xml:space="preserve">
+    <value>Seleziona</value>
+  </data>
+  
+  <!-- Inline translations for TrayIcon -->
+  <data name="UnreadTraySuffix" xml:space="preserve">
+    <value>non letti</value>
+  </data>
+  <data name="TrayRestore" xml:space="preserve">
+    <value>Ripristina Lettore</value>
+  </data>
+  <data name="TraySync" xml:space="preserve">
+    <value>Sincronizza Ora</value>
+  </data>
+  <data name="TrayExit" xml:space="preserve">
+    <value>Esci</value>
+  </data>
+</root>

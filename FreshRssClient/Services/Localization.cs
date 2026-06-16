@@ -52,111 +52,154 @@ namespace FreshRssClient.Services
         string SelectedArticlesSuffix { get; }
         string SearchPlaceholder { get; }
         string SelectAll { get; }
+
+        // SettingsPage labels
+        string AccountExpanderHeader { get; }
+        string AccountExpanderDesc { get; }
+        string ServerUrlCardDesc { get; }
+        string UsernameCardDesc { get; }
+        string PasswordCardDesc { get; }
+        string SyncExpanderHeader { get; }
+        string SyncExpanderDesc { get; }
+        string IntervalCardDesc { get; }
+        string MaxReadCardDesc { get; }
+        string ReadingExpanderHeader { get; }
+        string ReadingExpanderDesc { get; }
+        string OpenGraphCardDesc { get; }
+        string DefaultFilterCardHeader { get; }
+        string DefaultFilterCardDesc { get; }
+        string OpenInBrowserCardDesc { get; }
+        string SystemExpanderHeader { get; }
+        string SystemExpanderDesc { get; }
+        string AutoStartCardDesc { get; }
+        string StartMinimizedCardDesc { get; }
+        string LanguageCardDesc { get; }
+
+        // ArticlesPage labels
+        string ListViewTooltip { get; }
+        string GridViewTooltip { get; }
+        string ConfirmTitle { get; }
+        string ConfirmMarkReadContent { get; }
+        string ConfirmOpenBrowserContent { get; }
+        string YesButton { get; }
+        string CancelButton { get; }
+        string ContextMarkUnread { get; }
+        string ContextMarkRead { get; }
+        string ContextDeselect { get; }
+        string ContextSelect { get; }
+
+        // Tray icon labels
+        string UnreadTraySuffix { get; }
+        string TrayRestore { get; }
+        string TraySync { get; }
+        string TrayExit { get; }
     }
 
-    public class EnglishStrings : ILocalization
+    public class ResourceManagerStrings : ILocalization
     {
-        public string AppTitle => "FreshRSS Client";
-        public string FeedsTab => "Articles";
-        public string SettingsTab => "Settings";
-        public string ServerUrlLabel => "FreshRSS Server URL (ends with greader.php)";
-        public string UsernameLabel => "Username";
-        public string ApiPasswordLabel => "API Password (configured in FreshRSS profile)";
-        public string UpdateIntervalLabel => "Sync Interval (Minutes)";
-        public string EnableOpenGraphLabel => "Enable OpenGraph (scrape rich article text & images)";
-        public string LanguageLabel => "Language";
-        public string SaveButton => "Save Settings";
-        public string SavedSuccess => "Settings saved successfully!";
-        public string SyncNowButton => "Sync Now";
-        public string SyncingStatus => "Synchronizing feeds...";
-        public string SyncSuccess => "Synced successfully!";
-        public string SyncError => "Synchronization failed: {0}";
-        public string UnreadArticlesHeader => "Unread Articles";
-        public string NoArticles => "No unread articles. Excellent!";
-        public string NoArticlesSubtitle => "You're all caught up! Enjoy your day.";
-        public string MarkAsReadButton => "Mark as Read";
-        public string OpenInBrowser => "Read full article in browser";
-        public string IntervalMinutes => "{0} minutes";
-        public string StatusConnected => "Connected";
-        public string StatusDisconnected => "Disconnected (Check settings)";
-        public string NewArticleNotificationTitle => "New article from {0}";
-        public string SettingsSaved => "Settings saved successfully";
-        public string ShowUnreadOnlyLabel => "Show unread articles only";
-        public string MaxReadArticlesLabel => "Max read articles to sync";
-        public string LimitArticlesCount => "{0} articles";
-        public string UncategorizedGroup => "Uncategorized";
-        public string OfflineModeStatus => "Offline mode active (using cached data)";
-        public string SyncPendingReadsStatus => "Syncing offline read status updates...";
-        public string OpenLinksInBrowserLabel => "Open articles directly in browser";
-        public string UseGridLayoutLabel => "Use grid layout";
-        public string AutoStartLabel => "Start with Windows";
-        public string StartMinimizedLabel => "Start minimized in system tray";
-        public string BackToGridButton => "Back to Grid";
-        public string FilterLabel => "Filter";
-        public string FilterAll => "All articles";
-        public string FilterUnread => "Unread only";
-        public string FilterRead => "Read only";
-        public string MarkAllAsRead => "Mark all as read";
-        public string MassMarkAsRead => "Mark read";
-        public string MassOpen => "Open selected";
-        public string SelectedArticlesSuffix => "selected";
-        public string SearchPlaceholder => "Search...";
-        public string SelectAll => "Select / Deselect all";
-    }
+        private readonly System.Resources.ResourceManager _resourceManager;
+        private readonly System.Globalization.CultureInfo _culture;
 
-    public class ItalianStrings : ILocalization
-    {
-        public string AppTitle => "Lettore FreshRSS";
-        public string FeedsTab => "Articoli";
-        public string SettingsTab => "Impostazioni";
-        public string ServerUrlLabel => "URL Server FreshRSS (deve terminare con greader.php)";
-        public string UsernameLabel => "Nome Utente";
-        public string ApiPasswordLabel => "Password API (configurata nel profilo FreshRSS)";
-        public string UpdateIntervalLabel => "Intervallo di Sincronizzazione (Minuti)";
-        public string EnableOpenGraphLabel => "Abilita OpenGraph (scarica testo ricco e immagini copertina)";
-        public string LanguageLabel => "Lingua";
-        public string SaveButton => "Salva Impostazioni";
-        public string SavedSuccess => "Impostazioni salvate con successo!";
-        public string SyncNowButton => "Sincronizza Ora";
-        public string SyncingStatus => "Sincronizzazione feed...";
-        public string SyncSuccess => "Sincronizzazione completata!";
-        public string SyncError => "Errore di sincronizzazione: {0}";
-        public string UnreadArticlesHeader => "Articoli non letti";
-        public string NoArticles => "Nessun articolo da leggere. Ottimo!";
-        public string NoArticlesSubtitle => "Hai letto tutto! Goditi la giornata.";
-        public string MarkAsReadButton => "Segna come letto";
-        public string OpenInBrowser => "Leggi l'articolo completo nel browser";
-        public string IntervalMinutes => "{0} minuti";
-        public string StatusConnected => "Connesso";
-        public string StatusDisconnected => "Disconnesso (Verifica impostazioni)";
-        public string NewArticleNotificationTitle => "Nuovo articolo da {0}";
-        public string SettingsSaved => "Impostazioni salvate con successo";
-        public string ShowUnreadOnlyLabel => "Mostra solo articoli non letti";
-        public string MaxReadArticlesLabel => "Limite articoli letti da sincronizzare";
-        public string LimitArticlesCount => "{0} articoli";
-        public string UncategorizedGroup => "Senza categoria";
-        public string OfflineModeStatus => "Modalità offline attiva (dati caricati dalla cache)";
-        public string SyncPendingReadsStatus => "Sincronizzazione articoli letti offline...";
-        public string OpenLinksInBrowserLabel => "Apri articoli direttamente nel browser";
-        public string UseGridLayoutLabel => "Usa layout a griglia";
-        public string AutoStartLabel => "Avvia con Windows";
-        public string StartMinimizedLabel => "Avvia ridotto nella tray";
-        public string BackToGridButton => "Torna alla griglia";
-        public string FilterLabel => "Filtra";
-        public string FilterAll => "Tutti gli articoli";
-        public string FilterUnread => "Solo non letti";
-        public string FilterRead => "Solo letti";
-        public string MarkAllAsRead => "Segna tutto come letto";
-        public string MassMarkAsRead => "Segna come letti";
-        public string MassOpen => "Apri selezionati";
-        public string SelectedArticlesSuffix => "selezionati";
-        public string SearchPlaceholder => "Cerca...";
-        public string SelectAll => "Seleziona / Deseleziona tutto";
+        public ResourceManagerStrings(System.Globalization.CultureInfo culture)
+        {
+            _resourceManager = new System.Resources.ResourceManager("FreshRssClient.Resources.Strings", typeof(ResourceManagerStrings).Assembly);
+            _culture = culture;
+        }
+
+        private string Get(string key) => _resourceManager.GetString(key, _culture) ?? key;
+
+        public string AppTitle => Get(nameof(AppTitle));
+        public string FeedsTab => Get(nameof(FeedsTab));
+        public string SettingsTab => Get(nameof(SettingsTab));
+        public string ServerUrlLabel => Get(nameof(ServerUrlLabel));
+        public string UsernameLabel => Get(nameof(UsernameLabel));
+        public string ApiPasswordLabel => Get(nameof(ApiPasswordLabel));
+        public string UpdateIntervalLabel => Get(nameof(UpdateIntervalLabel));
+        public string EnableOpenGraphLabel => Get(nameof(EnableOpenGraphLabel));
+        public string LanguageLabel => Get(nameof(LanguageLabel));
+        public string SaveButton => Get(nameof(SaveButton));
+        public string SavedSuccess => Get(nameof(SavedSuccess));
+        public string SyncNowButton => Get(nameof(SyncNowButton));
+        public string SyncingStatus => Get(nameof(SyncingStatus));
+        public string SyncSuccess => Get(nameof(SyncSuccess));
+        public string SyncError => Get(nameof(SyncError));
+        public string UnreadArticlesHeader => Get(nameof(UnreadArticlesHeader));
+        public string NoArticles => Get(nameof(NoArticles));
+        public string NoArticlesSubtitle => Get(nameof(NoArticlesSubtitle));
+        public string MarkAsReadButton => Get(nameof(MarkAsReadButton));
+        public string OpenInBrowser => Get(nameof(OpenInBrowser));
+        public string IntervalMinutes => Get(nameof(IntervalMinutes));
+        public string StatusConnected => Get(nameof(StatusConnected));
+        public string StatusDisconnected => Get(nameof(StatusDisconnected));
+        public string NewArticleNotificationTitle => Get(nameof(NewArticleNotificationTitle));
+        public string SettingsSaved => Get(nameof(SettingsSaved));
+        public string ShowUnreadOnlyLabel => Get(nameof(ShowUnreadOnlyLabel));
+        public string MaxReadArticlesLabel => Get(nameof(MaxReadArticlesLabel));
+        public string LimitArticlesCount => Get(nameof(LimitArticlesCount));
+        public string UncategorizedGroup => Get(nameof(UncategorizedGroup));
+        public string OfflineModeStatus => Get(nameof(OfflineModeStatus));
+        public string SyncPendingReadsStatus => Get(nameof(SyncPendingReadsStatus));
+        public string OpenLinksInBrowserLabel => Get(nameof(OpenLinksInBrowserLabel));
+        public string UseGridLayoutLabel => Get(nameof(UseGridLayoutLabel));
+        public string AutoStartLabel => Get(nameof(AutoStartLabel));
+        public string StartMinimizedLabel => Get(nameof(StartMinimizedLabel));
+        public string BackToGridButton => Get(nameof(BackToGridButton));
+        public string FilterLabel => Get(nameof(FilterLabel));
+        public string FilterAll => Get(nameof(FilterAll));
+        public string FilterUnread => Get(nameof(FilterUnread));
+        public string FilterRead => Get(nameof(FilterRead));
+        public string MarkAllAsRead => Get(nameof(MarkAllAsRead));
+        public string MassMarkAsRead => Get(nameof(MassMarkAsRead));
+        public string MassOpen => Get(nameof(MassOpen));
+        public string SelectedArticlesSuffix => Get(nameof(SelectedArticlesSuffix));
+        public string SearchPlaceholder => Get(nameof(SearchPlaceholder));
+        public string SelectAll => Get(nameof(SelectAll));
+
+        // SettingsPage labels
+        public string AccountExpanderHeader => Get(nameof(AccountExpanderHeader));
+        public string AccountExpanderDesc => Get(nameof(AccountExpanderDesc));
+        public string ServerUrlCardDesc => Get(nameof(ServerUrlCardDesc));
+        public string UsernameCardDesc => Get(nameof(UsernameCardDesc));
+        public string PasswordCardDesc => Get(nameof(PasswordCardDesc));
+        public string SyncExpanderHeader => Get(nameof(SyncExpanderHeader));
+        public string SyncExpanderDesc => Get(nameof(SyncExpanderDesc));
+        public string IntervalCardDesc => Get(nameof(IntervalCardDesc));
+        public string MaxReadCardDesc => Get(nameof(MaxReadCardDesc));
+        public string ReadingExpanderHeader => Get(nameof(ReadingExpanderHeader));
+        public string ReadingExpanderDesc => Get(nameof(ReadingExpanderDesc));
+        public string OpenGraphCardDesc => Get(nameof(OpenGraphCardDesc));
+        public string DefaultFilterCardHeader => Get(nameof(DefaultFilterCardHeader));
+        public string DefaultFilterCardDesc => Get(nameof(DefaultFilterCardDesc));
+        public string OpenInBrowserCardDesc => Get(nameof(OpenInBrowserCardDesc));
+        public string SystemExpanderHeader => Get(nameof(SystemExpanderHeader));
+        public string SystemExpanderDesc => Get(nameof(SystemExpanderDesc));
+        public string AutoStartCardDesc => Get(nameof(AutoStartCardDesc));
+        public string StartMinimizedCardDesc => Get(nameof(StartMinimizedCardDesc));
+        public string LanguageCardDesc => Get(nameof(LanguageCardDesc));
+
+        // ArticlesPage labels
+        public string ListViewTooltip => Get(nameof(ListViewTooltip));
+        public string GridViewTooltip => Get(nameof(GridViewTooltip));
+        public string ConfirmTitle => Get(nameof(ConfirmTitle));
+        public string ConfirmMarkReadContent => Get(nameof(ConfirmMarkReadContent));
+        public string ConfirmOpenBrowserContent => Get(nameof(ConfirmOpenBrowserContent));
+        public string YesButton => Get(nameof(YesButton));
+        public string CancelButton => Get(nameof(CancelButton));
+        public string ContextMarkUnread => Get(nameof(ContextMarkUnread));
+        public string ContextMarkRead => Get(nameof(ContextMarkRead));
+        public string ContextDeselect => Get(nameof(ContextDeselect));
+        public string ContextSelect => Get(nameof(ContextSelect));
+
+        // Tray icon labels
+        public string UnreadTraySuffix => Get(nameof(UnreadTraySuffix));
+        public string TrayRestore => Get(nameof(TrayRestore));
+        public string TraySync => Get(nameof(TraySync));
+        public string TrayExit => Get(nameof(TrayExit));
     }
 
     public static class LocalizationManager
     {
-        private static ILocalization _current = new ItalianStrings(); // Default to Italian for our user
+        private static ILocalization _current = new ResourceManagerStrings(new System.Globalization.CultureInfo("it-IT")); // Default to Italian for our user
         public static ILocalization Current
         {
             get => _current;
@@ -178,12 +221,12 @@ namespace FreshRssClient.Services
         {
             if (langCode.ToLower() == "it")
             {
-                Current = new ItalianStrings();
+                Current = new ResourceManagerStrings(new System.Globalization.CultureInfo("it-IT"));
                 CurrentLanguageCode = "it";
             }
             else
             {
-                Current = new EnglishStrings();
+                Current = new ResourceManagerStrings(new System.Globalization.CultureInfo("en-US"));
                 CurrentLanguageCode = "en";
             }
         }
