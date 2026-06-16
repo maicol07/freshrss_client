@@ -108,7 +108,9 @@ namespace FreshRssClient.Services
         {
             try
             {
-                var logPath = @"C:\Users\Maicol\AntigravityProjects\freshrss-client\badge_log.txt";
+                var localFolder = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "FreshRssClient");
+                System.IO.Directory.CreateDirectory(localFolder);
+                var logPath = System.IO.Path.Combine(localFolder, "badge_log.txt");
                 var timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
                 System.IO.File.AppendAllText(logPath, $"[{timestamp}] {message}\n");
                 System.Diagnostics.Debug.WriteLine($"[BadgeLog] {message}");
