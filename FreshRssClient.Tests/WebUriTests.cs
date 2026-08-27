@@ -15,4 +15,15 @@ public class WebUriTests
     {
         await Assert.That(WebUri.TryCreate(value, out _)).IsEqualTo(expected);
     }
+
+    [Test]
+    [Arguments("https://example.com", true)]
+    [Arguments("http://localhost:8080", false)]
+    [Arguments("http://10.0.0.4", false)]
+    [Arguments("http://192.168.1.4", false)]
+    [Arguments("http://feeds.example.com", true)]
+    public async Task IsPublicHost_ProtectsPrivateAndLocalHosts(string value, bool expected)
+    {
+        await Assert.That(WebUri.TryCreate(value, out var uri) && WebUri.IsPublicHost(uri)).IsEqualTo(expected);
+    }
 }

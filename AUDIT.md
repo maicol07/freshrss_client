@@ -6,7 +6,7 @@ Data: 27 agosto 2026. Audit statico iniziale e stato degli interventi applicati.
 
 La base è recuperabile. Il problema principale non è la dimensione del repository: è la concentrazione di sincronizzazione, persistenza, stato UI e side effect in `MainViewModel`.
 
-Gli interventi P0 e parte dei P1 sono stati applicati e verificati con 32 test e build Release senza errori o warning. Restano da valutare la QA visuale con package identity, il reader HTML e la riduzione ulteriore del ViewModel.
+Gli interventi P0 e parte dei P1 sono stati applicati e verificati con 37 test e build Release senza errori o warning. Restano da valutare la QA visuale con package identity, il reader HTML e la riduzione ulteriore del ViewModel.
 
 Prima di qualsiasi redesign vanno risolti quattro rischi:
 
@@ -76,7 +76,7 @@ Prima di qualsiasi redesign vanno risolti quattro rischi:
 
 - **OpenGraph amplia inutilmente il rischio.** Il client segue redirect e scarica URL controllati dagli articoli senza limite di risposta, filtro per indirizzi privati o cancellation token ([OpenGraphService.cs:17](FreshRssClient/Services/OpenGraphService.cs#L17)). Può sondare servizi LAN e moltiplica fino a cinque richieste per sync. Raccomandazione: eliminare la feature; l'app estrae già immagini dal feed. Se resta, limitare schema, DNS/IP, redirect, byte, timeout regex e concorrenza.
 
-- **Leak verso Google per ogni feed.** Il servizio ignora `iconUrl` fornito da FreshRSS e costruisce `google.com/s2/favicons` ([FreshRssService.cs:399](FreshRssClient/Services/FreshRssService.cs#L399), [FreshRssService.cs:636](FreshRssClient/Services/FreshRssService.cs#L636)). FreshRSS include già `iconUrl` nella subscription list: [implementazione FreshRSS](https://github.com/FreshRSS/FreshRSS/blob/edge/p/api/greader.php). Usarlo evita tracking esterno e funziona con istanze private.
+- **Favicon esterne (trade-off esplicito).** Il servizio usa prima `iconUrl` fornito da FreshRSS; se manca, costruisce `google.com/s2/favicons` solo per host pubblici. Host locali/privati usano l'asset interno, evitando di inviare domini LAN a Google. FreshRSS include `iconUrl` nella subscription list: [implementazione FreshRSS](https://github.com/FreshRSS/FreshRSS/blob/edge/p/api/greader.php).
 
 - **Capability inutile.** `systemAIModels` è dichiarata ma non usata ([Package.appxmanifest:48](FreshRssClient/Package.appxmanifest#L48)). Rimuoverla. `runFullTrust` resta necessaria per l'app desktop e la tray Win32.
 
@@ -129,7 +129,7 @@ Questa scelta elimina `ArticleDetailPage`, il template grid duplicato e gran par
 - `delete:` rimuovere `DrawRoundedRectangle`, mai chiamato.
 - `yagni:` rimuovere `ILocalization`, interfaccia con una sola implementazione e nessun consumer sostituibile. Tenere il tipo concreto o generare gli accessor `.resx`.
 - `shrink:` sostituire le proprietà osservabili manuali con i generatori MVVM già presenti.
-- `native:` usare `iconUrl` di FreshRSS al posto del servizio favicon di Google.
+- `native:` usare prima `iconUrl` di FreshRSS e Google solo come fallback per host pubblici.
 - `shrink:` usare un'icona tray statica e lasciare il conteggio a tooltip + badge taskbar. Così spariscono il disegno GDI+, le extension grafiche e `System.Drawing.Common`.
 - `delete:` se si adotta il master-detail unico, eliminare grid mode e `ArticleDetailPage` duplicata.
 - `delete:` eliminare OpenGraph scraping se il fallback immagini non giustifica traffico e rischio.
@@ -146,7 +146,7 @@ net: -1.800 linee e -1 dipendenza possibili senza ridurre sincronizzazione, offl
 
 ## Build, test e release
 
-- Build e test sono riproducibili con `global.json` (`10.0.100`, `rollForward: latestFeature`); la suite conta 32 test superati e la build Release è pulita. È il modello documentato da Microsoft: [global.json](https://learn.microsoft.com/en-us/dotnet/core/tools/global-json).
+- Build e test sono riproducibili con `global.json` (`10.0.100`, `rollForward: latestFeature`); la suite conta 37 test superati e la build Release è pulita. È il modello documentato da Microsoft: [global.json](https://learn.microsoft.com/en-us/dotnet/core/tools/global-json).
 - La workflow pubblica senza eseguire `dotnet test` ([build.yml:22](.github/workflows/build.yml#L22)). Inserire i test prima del publish e conservare l'artifact solo dopo successo.
 - Packaging ambiguo: `WindowsPackageType=None` è commentato, MSIX è abilitato, ma README e CI promettono una cartella portable. Scegliere un solo contratto. MSIX è preferibile per startup task, identità, notifiche e Credential Locker; un build unpackaged richiede configurazione esplicita e ha limitazioni documentate: [distribuzione WinUI unpackaged](https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/unpackage-winui-app).
 - Il manifest dichiara minimo `17763`, il README `19041`. Allineare TFM, manifest, CI e requisiti pubblici.
@@ -178,6 +178,6 @@ net: -1.800 linee e -1 dipendenza possibili senza ridurre sincronizzazione, offl
 
 ## Limiti della verifica
 
-- Build e test: eseguiti con SDK .NET 10; 32/32 test superati e build Release pulita.
+- Build e test: eseguiti con SDK .NET 10; 37/37 test superati e build Release pulita.
 - Ispezione visuale runtime: la build installata era disponibile, ma l'autorizzazione del controllo UI è scaduta prima dell'apertura. I rilievi UI sopra derivano quindi dal markup e dal flusso degli eventi, non da screenshot runtime.
 - Nessun file applicativo, impostazione, account o dato FreshRSS è stato modificato.

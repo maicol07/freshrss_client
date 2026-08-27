@@ -186,6 +186,7 @@ namespace FreshRssClient.Tests
             await Assert.That(art1.Title).IsEqualTo("Article 1");
             await Assert.That(art1.Summary).IsEqualTo("Summary body bold text"); // HTML tags should be stripped
             await Assert.That(art1.ImageUrl).IsNull();
+            await Assert.That(art1.FeedIconUrl).IsEqualTo("https://www.google.com/s2/favicons?domain=example.com&sz=32");
             await Assert.That(art1.IsRead).IsFalse();
 
             var art2 = articles[1];
@@ -333,6 +334,7 @@ namespace FreshRssClient.Tests
                   ""id"": ""feed/1"",
                   ""title"": ""Tech News"",
                   ""htmlUrl"": ""https://tech.example.com"",
+                  ""iconUrl"": ""https://tech.example.com/icon.png"",
                   ""categories"": [
                     { ""id"": ""user/-/label/Tech"", ""label"": ""Tech"" }
                   ]
@@ -382,8 +384,10 @@ namespace FreshRssClient.Tests
             await Assert.That(feeds).Count().IsEqualTo(2);
             await Assert.That(feeds[0].Id).IsEqualTo("feed/1");
             await Assert.That(feeds[0].UnreadCount).IsEqualTo(3);
+            await Assert.That(feeds[0].IconUrl).IsEqualTo("https://tech.example.com/icon.png");
             await Assert.That(feeds[1].Id).IsEqualTo("feed/2");
             await Assert.That(feeds[1].UnreadCount).IsEqualTo(5);
+            await Assert.That(feeds[1].IconUrl).IsEqualTo("https://www.google.com/s2/favicons?domain=general.example.com&sz=32");
 
             // Tech category + Uncategorized group
             await Assert.That(categories).Count().IsEqualTo(2);

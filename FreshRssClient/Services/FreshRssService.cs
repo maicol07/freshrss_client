@@ -10,6 +10,7 @@ using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
+using FreshRssClient.Helpers;
 using System.Windows.Input;
 
 namespace FreshRssClient.Services
@@ -245,6 +246,7 @@ namespace FreshRssClient.Services
 
     public class FreshRssService : IFreshRssService
     {
+        private const string DefaultFeedIconUrl = "ms-appx:///Assets/Square44x44Logo.targetsize-24_altform-unplated.png";
         private readonly HttpClient _httpClient;
         
         private string _serverUrl = string.Empty;
@@ -401,7 +403,7 @@ namespace FreshRssClient.Services
                         readCount++;
                     }
 
-                    string feedIconUrl = "ms-appx:///Assets/Square44x44Logo.targetsize-24_altform-unplated.png";
+                    string feedIconUrl = BuildFeedIconUrl(null, item.Origin?.HtmlUrl);
 
                     var article = new RssArticle
                     {
@@ -590,12 +592,7 @@ namespace FreshRssClient.Services
                     // Calculate unread count for feed
                     unreadCountsMap.TryGetValue(sub.Id, out int feedUnread);
 
-                    string iconUrl = "ms-appx:///Assets/Square44x44Logo.targetsize-24_altform-unplated.png";
-                    if (Uri.TryCreate(sub.IconUrl, UriKind.Absolute, out var feedIconUri) &&
-                        (feedIconUri.Scheme == Uri.UriSchemeHttp || feedIconUri.Scheme == Uri.UriSchemeHttps))
-                    {
-                        iconUrl = feedIconUri.ToString();
-                    }
+                    string iconUrl = BuildFeedIconUrl(sub.IconUrl, sub.HtmlUrl);
 
                     var feed = new RssFeed
                     {
@@ -709,6 +706,21 @@ namespace FreshRssClient.Services
         {
             var decoded = System.Net.WebUtility.HtmlDecode(Regex.Replace(html, "<[^>]+>", " "));
             return Regex.Replace(decoded, @"\s+", " ").Trim();
+        }
+
+        private static string BuildFeedIconUrl(string? iconUrl, string? siteUrl)
+        {
+            if (WebUri.TryCreate(iconUrl, out var iconUri))
+            {
+                return iconUri.ToString();
+            }
+
+            if (WebUri.TryCreate(siteUrl, out var siteUri) && WebUri.IsPublicHost(siteUri))
+            {
+                return $"https://www.google.com/s2/favicons?domain={Uri.EscapeDataString(siteUri.DnsSafeHost)}&sz=32";
+            }
+
+            return DefaultFeedIconUrl;
         }
 
         #region GReader API JSON Classes
