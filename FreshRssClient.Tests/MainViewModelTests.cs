@@ -288,7 +288,7 @@ namespace FreshRssClient.Tests
 
             // Verify pending list file was cleared
             var pendingContent = File.ReadAllText(pendingFile);
-            await Assert.That(pendingContent).IsEqualTo("[]");
+            await Assert.That(pendingContent).IsEqualTo("{}");
         }
 
         [Test]
@@ -339,9 +339,9 @@ namespace FreshRssClient.Tests
 
             // Assert
             await Assert.That(article.IsRead).IsTrue();
-            await Assert.That(feed.UnreadCount).IsEqualTo(2);
-            await Assert.That(category.UnreadCount).IsEqualTo(2);
-            await Assert.That(viewModel.UnreadCount).IsEqualTo(2);
+            await Assert.That(feed.UnreadCount).IsEqualTo(0);
+            await Assert.That(category.UnreadCount).IsEqualTo(0);
+            await Assert.That(viewModel.UnreadCount).IsEqualTo(0);
             await Assert.That(fakeService.MarkAllAsReadCallCount).IsEqualTo(1);
             await Assert.That(fakeService.LastMarkAllAsReadStreamId).IsEqualTo("feed/all");
         }
@@ -491,6 +491,19 @@ namespace FreshRssClient.Tests
         }
 
         [Test]
+        public async Task Settings_ApiPassword_IsNotWrittenToDisk()
+        {
+            using var viewModel = new MainViewModel(new FakeFreshRssService(), new FakeNotificationService(), null, _tempDataFolder);
+
+            viewModel.ApiPassword = "super-secret";
+            await Task.Delay(100);
+
+            var settingsJson = File.ReadAllText(Path.Combine(_tempDataFolder, "settings.json"));
+            await Assert.That(settingsJson).DoesNotContain("super-secret");
+            await Assert.That(settingsJson).DoesNotContain("ApiPassword");
+        }
+
+        [Test]
         public async Task TestMainViewModel_SearchQuery_FiltersLocally()
         {
             // Arrange
@@ -551,7 +564,7 @@ namespace FreshRssClient.Tests
             return Task.FromResult(AuthenticateResult);
         }
 
-        public Task<List<RssArticle>> FetchArticlesAsync(string? streamId, bool showUnreadOnly, int maxReadArticles, bool enableOpenGraphScrape, string? searchQuery = null, CancellationToken cancellationToken = default)
+        public Task<List<RssArticle>> FetchArticlesAsync(string? streamId, bool showUnreadOnly, int maxReadArticles, string? searchQuery = null, CancellationToken cancellationToken = default)
         {
             FetchArticlesCallCount++;
             return Task.FromResult(ArticlesToReturn);

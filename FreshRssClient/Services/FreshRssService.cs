@@ -236,7 +236,7 @@ namespace FreshRssClient.Services
     {
         bool LastConnectionFailed { get; }
         Task<bool> AuthenticateAsync(string serverUrl, string username, string apiPassword, CancellationToken cancellationToken = default);
-        Task<List<RssArticle>> FetchArticlesAsync(string? streamId, bool showUnreadOnly, int maxReadArticles, bool enableOpenGraphScrape, string? searchQuery = null, CancellationToken cancellationToken = default);
+        Task<List<RssArticle>> FetchArticlesAsync(string? streamId, bool showUnreadOnly, int maxReadArticles, string? searchQuery = null, CancellationToken cancellationToken = default);
         Task<bool> MarkAsReadAsync(string articleId, CancellationToken cancellationToken = default);
         Task<bool> MarkAsUnreadAsync(string articleId, CancellationToken cancellationToken = default);
         Task<bool> MarkAllAsReadAsync(string? streamId, CancellationToken cancellationToken = default);
@@ -246,7 +246,6 @@ namespace FreshRssClient.Services
     public class FreshRssService : IFreshRssService
     {
         private readonly HttpClient _httpClient;
-        private readonly IOpenGraphService _openGraphService;
         
         private string _serverUrl = string.Empty;
         private string _username = string.Empty;
@@ -256,9 +255,8 @@ namespace FreshRssClient.Services
 
         public bool LastConnectionFailed => _lastConnectionFailed;
 
-        public FreshRssService(IOpenGraphService? openGraphService = null, HttpClient? httpClient = null)
+        public FreshRssService(HttpClient? httpClient = null)
         {
-            _openGraphService = openGraphService ?? new OpenGraphService();
             _httpClient = httpClient ?? new HttpClient(new HttpClientHandler
             {
                 AutomaticDecompression = System.Net.DecompressionMethods.All
@@ -273,7 +271,6 @@ namespace FreshRssClient.Services
                 return false;
             }
 
-            // Ensure server URL formatting is correct
             serverUrl = serverUrl.Trim();
             if (!serverUrl.EndsWith("greader.php") && !serverUrl.EndsWith("greader.php/"))
             {
@@ -281,11 +278,22 @@ namespace FreshRssClient.Services
             }
             serverUrl = serverUrl.TrimEnd('/');
 
+            if (!Uri.TryCreate(serverUrl, UriKind.Absolute, out var serverUri) ||
+                (serverUri.Scheme != Uri.UriSchemeHttp && serverUri.Scheme != Uri.UriSchemeHttps))
+            {
+                return false;
+            }
+
             try
             {
                 _lastConnectionFailed = false;
-                var loginUrl = $"{serverUrl}/accounts/ClientLogin?Email={Uri.EscapeDataString(username)}&Passwd={Uri.EscapeDataString(apiPassword)}";
-                var response = await _httpClient.GetAsync(loginUrl, cancellationToken);
+                var loginUrl = $"{serverUrl}/accounts/ClientLogin";
+                using var requestContent = new FormUrlEncodedContent(
+                [
+                    new("Email", username),
+                    new("Passwd", apiPassword)
+                ]);
+                var response = await _httpClient.PostAsync(loginUrl, requestContent, cancellationToken);
                 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -318,7 +326,7 @@ namespace FreshRssClient.Services
             return false;
         }
 
-        public async Task<List<RssArticle>> FetchArticlesAsync(string? streamId, bool showUnreadOnly, int maxReadArticles, bool enableOpenGraphScrape, string? searchQuery = null, CancellationToken cancellationToken = default)
+        public async Task<List<RssArticle>> FetchArticlesAsync(string? streamId, bool showUnreadOnly, int maxReadArticles, string? searchQuery = null, CancellationToken cancellationToken = default)
         {
             if (!_isAuthenticated)
             {
@@ -355,10 +363,7 @@ namespace FreshRssClient.Services
                 }
                 
                 var response = await _httpClient.GetAsync(url, cancellationToken);
-                if (!response.IsSuccessStatusCode)
-                {
-                    return new List<RssArticle>();
-                }
+                response.EnsureSuccessStatusCode();
 
                 var jsonString = await response.Content.ReadAsStringAsync(cancellationToken);
                 var options = new JsonSerializerOptions
@@ -397,15 +402,6 @@ namespace FreshRssClient.Services
                     }
 
                     string feedIconUrl = "ms-appx:///Assets/Square44x44Logo.targetsize-24_altform-unplated.png";
-                    if (item.Origin != null && !string.IsNullOrEmpty(item.Origin.HtmlUrl))
-                    {
-                        try
-                        {
-                            var uri = new Uri(item.Origin.HtmlUrl);
-                            feedIconUrl = $"https://www.google.com/s2/favicons?domain={uri.Host}&sz=32";
-                        }
-                        catch { }
-                    }
 
                     var article = new RssArticle
                     {
@@ -429,55 +425,23 @@ namespace FreshRssClient.Services
                     }
                     article.ImageUrl = img;
 
-                    // Clean tags from summary for card preview
-                    if (!string.IsNullOrEmpty(article.Summary))
-                    {
-                        article.Summary = Regex.Replace(article.Summary, "<.*?>", string.Empty);
-                        article.Summary = System.Net.WebUtility.HtmlDecode(article.Summary).Trim();
-                    }
+                    article.Summary = CleanHtml(article.Summary);
+                    article.Content = CleanHtml(article.Content);
 
                     list.Add(article);
-                }
-
-                // Fetch via OpenGraph in parallel if enabled and image or description is missing
-                if (enableOpenGraphScrape)
-                {
-                    var articlesNeedingScrape = list.Where(article => 
-                        !string.IsNullOrEmpty(article.Link) && 
-                        (string.IsNullOrEmpty(article.ImageUrl) || string.IsNullOrEmpty(article.Summary))
-                    ).ToList();
-
-                    if (articlesNeedingScrape.Count > 0)
-                    {
-                        var parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = 5 };
-                        await Parallel.ForEachAsync(articlesNeedingScrape, parallelOptions, async (article, cancellationToken) =>
-                        {
-                            var og = await _openGraphService.FetchOpenGraphMetadataAsync(article.Link);
-                            if (string.IsNullOrEmpty(article.ImageUrl) && !string.IsNullOrEmpty(og.ImageUrl))
-                            {
-                                article.ImageUrl = og.ImageUrl;
-                            }
-                            if (string.IsNullOrEmpty(article.Summary) && !string.IsNullOrEmpty(og.Description))
-                            {
-                                var cleanSummary = og.Description;
-                                if (!string.IsNullOrEmpty(cleanSummary))
-                                {
-                                    cleanSummary = Regex.Replace(cleanSummary, "<.*?>", string.Empty);
-                                    cleanSummary = System.Net.WebUtility.HtmlDecode(cleanSummary).Trim();
-                                }
-                                article.Summary = cleanSummary ?? string.Empty;
-                            }
-                        });
-                    }
                 }
 
                 // Sort by publish date descending so newest are at the top
                 list.Sort((a, b) => b.PublishDate.CompareTo(a.PublishDate));
                 return list;
             }
-            catch (Exception)
+            catch (OperationCanceledException)
             {
-                return new List<RssArticle>();
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("FreshRSS article sync failed.", ex);
             }
         }
 
@@ -541,7 +505,7 @@ namespace FreshRssClient.Services
 
         public async Task<bool> MarkAllAsReadAsync(string? streamId, CancellationToken cancellationToken = default)
         {
-            if (!_isAuthenticated)
+            if (!_isAuthenticated || streamId == "uncategorized")
             {
                 return false;
             }
@@ -551,11 +515,6 @@ namespace FreshRssClient.Services
                 var markAllUrl = $"{_serverUrl}/reader/api/0/mark-all-as-read";
                 
                 string targetStream = string.IsNullOrEmpty(streamId) ? "user/-/state/com.google/reading-list" : streamId;
-                if (targetStream == "uncategorized")
-                {
-                    targetStream = "user/-/state/com.google/reading-list";
-                }
-
                 long ts = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
                 var data = new List<KeyValuePair<string, string>>
@@ -594,10 +553,7 @@ namespace FreshRssClient.Services
                 await Task.WhenAll(subTask, unreadTask);
 
                 var subResponse = await subTask;
-                if (!subResponse.IsSuccessStatusCode)
-                {
-                    return (new List<RssCategory>(), new List<RssFeed>());
-                }
+                subResponse.EnsureSuccessStatusCode();
 
                 var subJson = await subResponse.Content.ReadAsStringAsync(cancellationToken);
                 var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
@@ -610,6 +566,7 @@ namespace FreshRssClient.Services
                 var unreadResponse = await unreadTask;
                 var unreadCountsMap = new Dictionary<string, int>();
 
+                unreadResponse.EnsureSuccessStatusCode();
                 if (unreadResponse.IsSuccessStatusCode)
                 {
                     var unreadJson = await unreadResponse.Content.ReadAsStringAsync(cancellationToken);
@@ -633,16 +590,11 @@ namespace FreshRssClient.Services
                     // Calculate unread count for feed
                     unreadCountsMap.TryGetValue(sub.Id, out int feedUnread);
 
-                    // Generate Favicon URL
                     string iconUrl = "ms-appx:///Assets/Square44x44Logo.targetsize-24_altform-unplated.png";
-                    if (!string.IsNullOrEmpty(sub.HtmlUrl))
+                    if (Uri.TryCreate(sub.IconUrl, UriKind.Absolute, out var feedIconUri) &&
+                        (feedIconUri.Scheme == Uri.UriSchemeHttp || feedIconUri.Scheme == Uri.UriSchemeHttps))
                     {
-                        try
-                        {
-                            var uri = new Uri(sub.HtmlUrl);
-                            iconUrl = $"https://www.google.com/s2/favicons?domain={uri.Host}&sz=32";
-                        }
-                        catch { }
+                        iconUrl = feedIconUri.ToString();
                     }
 
                     var feed = new RssFeed
@@ -704,9 +656,13 @@ namespace FreshRssClient.Services
 
                 return (categoriesList, allFeeds);
             }
-            catch
+            catch (OperationCanceledException)
             {
-                return (new List<RssCategory>(), new List<RssFeed>());
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("FreshRSS subscription sync failed.", ex);
             }
         }
 
@@ -749,6 +705,12 @@ namespace FreshRssClient.Services
             return null;
         }
 
+        private static string CleanHtml(string html)
+        {
+            var decoded = System.Net.WebUtility.HtmlDecode(Regex.Replace(html, "<[^>]+>", " "));
+            return Regex.Replace(decoded, @"\s+", " ").Trim();
+        }
+
         #region GReader API JSON Classes
 
         private class GReaderSubscriptionResponse
@@ -761,6 +723,7 @@ namespace FreshRssClient.Services
             public string Id { get; set; } = string.Empty;
             public string Title { get; set; } = string.Empty;
             public string? HtmlUrl { get; set; }
+            public string? IconUrl { get; set; }
             public List<GReaderCategory>? Categories { get; set; }
         }
 

@@ -18,11 +18,13 @@ namespace FreshRssClient.Tests
         {
             // Arrange
             HttpRequestMessage? capturedRequest = null;
+            string? capturedBody = null;
             var mockHandler = new AdvancedMockHttpMessageHandler
             {
                 HandlerFunc = req =>
                 {
                     capturedRequest = req;
+                    capturedBody = req.Content?.ReadAsStringAsync().GetAwaiter().GetResult();
                     return new HttpResponseMessage(HttpStatusCode.OK)
                     {
                         Content = new StringContent("SID=something\nLSID=something\nAuth=abc_session_token_123\n")
@@ -30,7 +32,7 @@ namespace FreshRssClient.Tests
                 }
             };
 
-            var service = new FreshRssService(null, new HttpClient(mockHandler));
+            var service = new FreshRssService(new HttpClient(mockHandler));
 
             // Act
             var result = await service.AuthenticateAsync("https://example.com", "my_user", "my_api_password");
@@ -40,6 +42,33 @@ namespace FreshRssClient.Tests
             await Assert.That(service.LastConnectionFailed).IsFalse();
             await Assert.That(capturedRequest).IsNotNull();
             await Assert.That(capturedRequest!.RequestUri!.ToString()).Contains("/accounts/ClientLogin");
+            await Assert.That(capturedRequest.Method).IsEqualTo(HttpMethod.Post);
+            await Assert.That(capturedRequest.RequestUri.Query).IsEmpty();
+            await Assert.That(capturedBody).Contains("Passwd=my_api_password");
+        }
+
+        [Test]
+        public async Task MarkAllAsReadAsync_Uncategorized_DoesNotCallGlobalEndpoint()
+        {
+            var requestCount = 0;
+            var mockHandler = new AdvancedMockHttpMessageHandler
+            {
+                HandlerFunc = request =>
+                {
+                    requestCount++;
+                    return new HttpResponseMessage(HttpStatusCode.OK)
+                    {
+                        Content = new StringContent("Auth=token")
+                    };
+                }
+            };
+            var service = new FreshRssService(new HttpClient(mockHandler));
+            await service.AuthenticateAsync("https://example.com", "user", "pass");
+
+            var result = await service.MarkAllAsReadAsync("uncategorized");
+
+            await Assert.That(result).IsFalse();
+            await Assert.That(requestCount).IsEqualTo(1);
         }
 
         [Test]
@@ -51,7 +80,7 @@ namespace FreshRssClient.Tests
                 HandlerFunc = req => new HttpResponseMessage(HttpStatusCode.Unauthorized)
             };
 
-            var service = new FreshRssService(null, new HttpClient(mockHandler));
+            var service = new FreshRssService(new HttpClient(mockHandler));
 
             // Act
             var result = await service.AuthenticateAsync("https://example.com", "my_user", "wrong_password");
@@ -70,7 +99,7 @@ namespace FreshRssClient.Tests
                 HandlerFunc = req => throw new HttpRequestException("Network down")
             };
 
-            var service = new FreshRssService(null, new HttpClient(mockHandler));
+            var service = new FreshRssService(new HttpClient(mockHandler));
 
             // Act
             var result = await service.AuthenticateAsync("https://example.com", "my_user", "my_api_password");
@@ -87,7 +116,7 @@ namespace FreshRssClient.Tests
             var service = new FreshRssService();
 
             // Act
-            var articles = await service.FetchArticlesAsync(null, false, 50, false);
+            var articles = await service.FetchArticlesAsync(null, false, 50);
 
             // Assert
             await Assert.That(articles).IsEmpty();
@@ -98,7 +127,7 @@ namespace FreshRssClient.Tests
         {
             // Arrange
             var mockHandler = new AdvancedMockHttpMessageHandler();
-            var service = new FreshRssService(null, new HttpClient(mockHandler));
+            var service = new FreshRssService(new HttpClient(mockHandler));
 
             // Perform authenticating so we can fetch
             mockHandler.HandlerFunc = req => new HttpResponseMessage(HttpStatusCode.OK)
@@ -144,7 +173,7 @@ namespace FreshRssClient.Tests
             };
 
             // Act
-            var articles = await service.FetchArticlesAsync(null, false, 50, false);
+            var articles = await service.FetchArticlesAsync(null, false, 50);
 
             // Assert
             await Assert.That(capturedRequest).IsNotNull();
@@ -170,7 +199,7 @@ namespace FreshRssClient.Tests
         {
             // Arrange
             var mockHandler = new AdvancedMockHttpMessageHandler();
-            var service = new FreshRssService(null, new HttpClient(mockHandler));
+            var service = new FreshRssService(new HttpClient(mockHandler));
 
             mockHandler.HandlerFunc = req => new HttpResponseMessage(HttpStatusCode.OK)
             {
@@ -202,7 +231,7 @@ namespace FreshRssClient.Tests
             };
 
             // Act - Fetch with showUnreadOnly = true
-            var articles = await service.FetchArticlesAsync(null, true, 50, false);
+            var articles = await service.FetchArticlesAsync(null, true, 50);
 
             // Assert
             await Assert.That(articles).Count().IsEqualTo(1);
@@ -214,7 +243,7 @@ namespace FreshRssClient.Tests
         {
             // Arrange
             var mockHandler = new AdvancedMockHttpMessageHandler();
-            var service = new FreshRssService(null, new HttpClient(mockHandler));
+            var service = new FreshRssService(new HttpClient(mockHandler));
 
             mockHandler.HandlerFunc = req => new HttpResponseMessage(HttpStatusCode.OK)
             {
@@ -246,7 +275,7 @@ namespace FreshRssClient.Tests
             };
 
             // Act - Fetch with maxReadArticles = 1
-            var articles = await service.FetchArticlesAsync(null, false, 1, false);
+            var articles = await service.FetchArticlesAsync(null, false, 1);
 
             // Assert
             await Assert.That(articles).Count().IsEqualTo(1);
@@ -258,7 +287,7 @@ namespace FreshRssClient.Tests
         {
             // Arrange
             var mockHandler = new AdvancedMockHttpMessageHandler();
-            var service = new FreshRssService(null, new HttpClient(mockHandler));
+            var service = new FreshRssService(new HttpClient(mockHandler));
 
             mockHandler.HandlerFunc = req => new HttpResponseMessage(HttpStatusCode.OK)
             {
@@ -288,7 +317,7 @@ namespace FreshRssClient.Tests
         {
             // Arrange
             var mockHandler = new AdvancedMockHttpMessageHandler();
-            var service = new FreshRssService(null, new HttpClient(mockHandler));
+            var service = new FreshRssService(new HttpClient(mockHandler));
 
             mockHandler.HandlerFunc = req => new HttpResponseMessage(HttpStatusCode.OK)
             {

@@ -61,8 +61,10 @@ namespace FreshRssClient.Views
             {
                 try
                 {
-                    var uri = new Uri(_article.Link);
-                    await Windows.System.Launcher.LaunchUriAsync(uri);
+                    if (WebUri.TryCreate(_article.Link, out var uri))
+                    {
+                        await Windows.System.Launcher.LaunchUriAsync(uri);
+                    }
                 }
                 catch { }
             }
