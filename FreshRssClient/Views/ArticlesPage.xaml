@@ -9,7 +9,117 @@
     mc:Ignorable="d">
 
     <Page.Resources>
-        <views:StringToImageSourceConverter x:Key="ImageConverter"/>
+        <ResourceDictionary>
+            <ResourceDictionary.ThemeDictionaries>
+                <!-- Tint drawn over the card on pointer/selection states; per-state strength comes from the overlay opacity -->
+                <ResourceDictionary x:Key="Light">
+                    <SolidColorBrush x:Key="CardStateOverlayBrush" Color="#000000"/>
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Dark">
+                    <SolidColorBrush x:Key="CardStateOverlayBrush" Color="#FFFFFF"/>
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+
+            <views:StringToImageSourceConverter x:Key="ImageConverter"/>
+
+            <!-- Card container: retemplated because ListViewItemPresenter ignores CornerRadius,
+                 which left the state visuals square against the rounded card -->
+            <Style x:Key="ArticleCardContainerStyle" TargetType="GridViewItem">
+                <Setter Property="Margin" Value="6"/>
+                <Setter Property="Padding" Value="0"/>
+                <Setter Property="MinWidth" Value="0"/>
+                <Setter Property="MinHeight" Value="0"/>
+                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                <Setter Property="VerticalContentAlignment" Value="Stretch"/>
+                <Setter Property="UseSystemFocusVisuals" Value="False"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="GridViewItem">
+                            <!-- Border (not Grid) is the root: it clips its children to the corner radius -->
+                            <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="8">
+                                <VisualStateManager.VisualStateGroups>
+                                    <VisualStateGroup x:Name="CommonStates">
+                                        <VisualState x:Name="Normal">
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetName="HoverOverlay" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.22">
+                                                    <DoubleAnimation.EasingFunction>
+                                                        <CubicEase EasingMode="EaseOut"/>
+                                                    </DoubleAnimation.EasingFunction>
+                                                </DoubleAnimation>
+                                            </Storyboard>
+                                        </VisualState>
+                                        <VisualState x:Name="PointerOver">
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetName="HoverOverlay" Storyboard.TargetProperty="Opacity" To="0.07" Duration="0:0:0.15">
+                                                    <DoubleAnimation.EasingFunction>
+                                                        <CubicEase EasingMode="EaseOut"/>
+                                                    </DoubleAnimation.EasingFunction>
+                                                </DoubleAnimation>
+                                            </Storyboard>
+                                        </VisualState>
+                                        <VisualState x:Name="Pressed">
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetName="HoverOverlay" Storyboard.TargetProperty="Opacity" To="0.11" Duration="0:0:0.08">
+                                                    <DoubleAnimation.EasingFunction>
+                                                        <CubicEase EasingMode="EaseOut"/>
+                                                    </DoubleAnimation.EasingFunction>
+                                                </DoubleAnimation>
+                                            </Storyboard>
+                                        </VisualState>
+                                        <VisualState x:Name="Disabled"/>
+                                    </VisualStateGroup>
+                                    <VisualStateGroup x:Name="SelectionStates">
+                                        <VisualState x:Name="Unselected">
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetName="SelectionOverlay" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.22">
+                                                    <DoubleAnimation.EasingFunction>
+                                                        <CubicEase EasingMode="EaseOut"/>
+                                                    </DoubleAnimation.EasingFunction>
+                                                </DoubleAnimation>
+                                            </Storyboard>
+                                        </VisualState>
+                                        <VisualState x:Name="Selected">
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetName="SelectionOverlay" Storyboard.TargetProperty="Opacity" To="0.10" Duration="0:0:0.18">
+                                                    <DoubleAnimation.EasingFunction>
+                                                        <CubicEase EasingMode="EaseOut"/>
+                                                    </DoubleAnimation.EasingFunction>
+                                                </DoubleAnimation>
+                                            </Storyboard>
+                                        </VisualState>
+                                        <VisualState x:Name="SelectedUnfocused">
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetName="SelectionOverlay" Storyboard.TargetProperty="Opacity" To="0.10" Duration="0:0:0.18">
+                                                    <DoubleAnimation.EasingFunction>
+                                                        <CubicEase EasingMode="EaseOut"/>
+                                                    </DoubleAnimation.EasingFunction>
+                                                </DoubleAnimation>
+                                            </Storyboard>
+                                        </VisualState>
+                                    </VisualStateGroup>
+                                </VisualStateManager.VisualStateGroups>
+                              <Grid>
+                                <ContentPresenter Content="{TemplateBinding Content}"
+                                                  ContentTemplate="{TemplateBinding ContentTemplate}"
+                                                  HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                  VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                                <!-- Separate overlays so hover and selection stack instead of overwriting each other -->
+                                <Border x:Name="SelectionOverlay"
+                                        CornerRadius="8"
+                                        Background="{ThemeResource CardStateOverlayBrush}"
+                                        Opacity="0"
+                                        IsHitTestVisible="False"/>
+                                <Border x:Name="HoverOverlay"
+                                        CornerRadius="8"
+                                        Background="{ThemeResource CardStateOverlayBrush}"
+                                        Opacity="0"
+                                        IsHitTestVisible="False"/>
+                              </Grid>
+                            </Border>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
 
         <!-- Right-click Context Menu Resource -->
         <MenuFlyout x:Key="ArticleContextFlyout" Opening="OnArticleContextFlyoutOpening">
@@ -127,9 +237,9 @@
 
         <!-- GridView Item Template -->
         <DataTemplate x:Key="ArticleGridTemplate" x:DataType="services:RssArticle">
-            <Border Width="260" Height="280" Margin="0" 
-                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" 
-                    CornerRadius="8" 
+            <Border Width="260" Height="280" Margin="0"
+                    Background="Transparent"
+                    CornerRadius="8"
                     BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" 
                     BorderThickness="1"
                     ContextFlyout="{StaticResource ArticleContextFlyout}"
@@ -219,6 +329,7 @@
                 </Grid>
             </Border>
         </DataTemplate>
+        </ResourceDictionary>
     </Page.Resources>
 
     <Grid x:Name="RootGrid" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" SizeChanged="OnRootGridSizeChanged">
@@ -343,6 +454,7 @@
                       Margin="12" 
                       Padding="0"
                       ItemTemplate="{StaticResource ArticleGridTemplate}"
+                      ItemContainerStyle="{StaticResource ArticleCardContainerStyle}"
                       Visibility="Collapsed"
                       SelectionChanged="OnArticlesGridViewSelectionChanged"/>
 

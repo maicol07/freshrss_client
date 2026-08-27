@@ -29,15 +29,6 @@ namespace FreshRssClient.Views
             this.Loaded += OnLoaded;
             this.Unloaded += OnUnloaded;
 
-            // Set grid view styling using a safe, standard style that preserves native Fluent templates
-            ArticlesGridView.ItemContainerStyle = (Style)Microsoft.UI.Xaml.Markup.XamlReader.Load(@"
-            <Style xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation' TargetType='GridViewItem'>
-                <Setter Property='Margin' Value='6'/>
-                <Setter Property='Padding' Value='0'/>
-                <Setter Property='HorizontalContentAlignment' Value='Stretch'/>
-                <Setter Property='VerticalContentAlignment' Value='Stretch'/>
-            </Style>");
-
             // Fluid staggering entrance animations
             ArticlesListView.ItemContainerTransitions = new TransitionCollection
             {
