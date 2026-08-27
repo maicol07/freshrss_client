@@ -206,88 +206,120 @@ namespace FreshRssClient.Helpers
             SetForegroundWindow(_hwnd);
         }
 
+        // Brand palette, kept in sync with tools/generate-icons.ps1.
+        private static readonly Color PlateTopColor = Color.FromArgb(255, 245, 144, 31);
+        private static readonly Color PlateBottomColor = Color.FromArgb(255, 232, 99, 10);
+        private static readonly Color BadgeFillColor = Color.FromArgb(255, 28, 28, 28);
+        private static readonly Color BadgeRingColor = Color.FromArgb(255, 250, 250, 250);
+
         private Icon GenerateDynamicBadgeIcon(int unreadCount)
         {
             const int size = 32;
             using var bitmap = new Bitmap(size, size);
             using var graphics = Graphics.FromImage(bitmap);
-            
+
             graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-            graphics.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
 
-            // Monochromatic RSS mark, same proportions as the app icon (see
-            // tools/generate-icons.ps1). White glyph over a dark halo instead of the
-            // brand-colored plate: at 16-20px a filled plate swallows the glyph, and
-            // the halo keeps it readable on both light and dark taskbars.
-            var haloColor = Color.FromArgb(160, 15, 15, 15);
-            DrawRssMark(graphics, size, haloColor, outset: 1.8f);
-            DrawRssMark(graphics, size, Color.White, outset: 0f);
+            // Same composition as the app icon (see tools/generate-icons.ps1): brand
+            // plate at 86% of the canvas, white RSS mark at 62% of the plate.
+            float plate = size * 0.86f;
+            float plateOrigin = (size - plate) / 2f;
 
-            // 3. Draw premium notification badge with unread count text if unreadCount > 0
+            var plateBounds = new RectangleF(plateOrigin, plateOrigin, plate, plate);
+            using (var plateBrush = new System.Drawing.Drawing2D.LinearGradientBrush(
+                plateBounds, PlateTopColor, PlateBottomColor, 90f))
+            {
+                // Brush rect equal to the fill rect otherwise leaves a wrap hairline
+                // of the wrong color along the gradient's start edge.
+                plateBrush.WrapMode = System.Drawing.Drawing2D.WrapMode.TileFlipXY;
+                graphics.FillRoundedRectangle(plateBrush, plateOrigin, plateOrigin, plate, plate, plate * 0.22f);
+            }
+
+            float markSide = plate * 0.62f;
+            float markOrigin = plateOrigin + ((plate - markSide) / 2f);
+            DrawRssMark(graphics, markOrigin, markOrigin, markSide, Color.White);
+
+            // Unread badge, overlapping the plate's top-right corner.
             if (unreadCount > 0)
             {
-                string countStr = unreadCount > 99 ? "99+" : unreadCount.ToString();
-                
-                // Fine-tune font size based on text length (compact and highly legible at 32x32 canvas)
-                float fontSize = countStr.Length > 2 ? 6.0f : (countStr.Length > 1 ? 7.0f : 8.0f);
-                using var font = new Font("Segoe UI", fontSize, FontStyle.Bold);
-                
-                // Measure text
-                var textSize = graphics.MeasureString(countStr, font);
-                
-                // Determine badge dimensions based on text length
-                float badgeHeight = 14f;
-                float badgeWidth = Math.Max(14f, textSize.Width + 3f);
-                
-                // Position at top right (ensure it doesn't clip outside the 32x32 canvas boundaries)
-                float badgeX = size - badgeWidth - 1f;
-                float badgeY = 1f;
+                // Capped at two glyphs: a third one fits only by shrinking the font back
+                // to unreadable, and the exact count is already in the tooltip.
+                string countStr = unreadCount > 99 ? "99" : unreadCount.ToString();
 
-                // Draw premium white cutout border first (provides 1px outer separation)
-                float borderPadding = 1.2f;
-                using (var borderBrush = new SolidBrush(Color.White))
+                // The digits are laid out as a filled path rather than DrawString: the
+                // text line box wastes vertical room on ascender and descender leading,
+                // which is what made the number look undersized inside the pill.
+                using var glyphs = new System.Drawing.Drawing2D.GraphicsPath();
+                using (var family = new FontFamily("Segoe UI"))
+                using (var typographic = new StringFormat(StringFormat.GenericTypographic))
                 {
-                    graphics.FillRoundedRectangle(borderBrush, 
-                        badgeX - borderPadding, 
-                        badgeY - borderPadding, 
-                        badgeWidth + (borderPadding * 2), 
-                        badgeHeight + (borderPadding * 2), 
-                        (badgeHeight + borderPadding * 2) / 2f);
+                    glyphs.AddString(countStr, family, (int)FontStyle.Bold, 32f,
+                        PointF.Empty, typographic);
                 }
 
-                // Draw badge background (Vibrant Fluent iOS Red)
-                using (var badgeBrush = new SolidBrush(Color.FromArgb(255, 59, 48)))
+                var glyphBounds = glyphs.GetBounds();
+                const float ring = 1.1f;
+                float badgeHeight = 16.5f;
+                float glyphHeight = badgeHeight * 0.72f;
+                float scale = glyphHeight / glyphBounds.Height;
+                float glyphWidth = glyphBounds.Width * scale;
+
+                // Tight side padding: at this glyph size a generous one would stretch the
+                // pill across most of the canvas.
+                float badgeWidth = Math.Max(badgeHeight, glyphWidth + (badgeHeight * 0.42f));
+
+                // Flush to the top-right corner, leaving exactly the ring outside.
+                float badgeX = size - badgeWidth - ring;
+                float badgeY = ring;
+
+                // Near-white hairline: separates the dark pill from the orange plate
+                // underneath and from the taskbar behind it, on light and dark alike.
+                using (var ringBrush = new SolidBrush(BadgeRingColor))
+                {
+                    graphics.FillRoundedRectangle(ringBrush,
+                        badgeX - ring,
+                        badgeY - ring,
+                        badgeWidth + (ring * 2f),
+                        badgeHeight + (ring * 2f),
+                        (badgeHeight + (ring * 2f)) / 2f);
+                }
+
+                // Carbon pill: red would sit too close to the plate's orange to read.
+                using (var badgeBrush = new SolidBrush(BadgeFillColor))
                 {
                     graphics.FillRoundedRectangle(badgeBrush, badgeX, badgeY, badgeWidth, badgeHeight, badgeHeight / 2f);
                 }
 
-                // Draw unread count text centered inside the badge
+                // Center the glyph bounding box (not its line box) inside the pill.
+                // Matrix methods prepend, so these are applied to the path bottom-up:
+                // bbox to origin, then scale, then move into place.
+                using (var transform = new System.Drawing.Drawing2D.Matrix())
                 using (var textBrush = new SolidBrush(Color.White))
-                using (var stringFormat = new StringFormat
                 {
-                    Alignment = StringAlignment.Center,
-                    LineAlignment = StringAlignment.Center
-                })
-                {
-                    graphics.DrawString(countStr, font, textBrush, 
-                        new RectangleF(badgeX, badgeY + 0.5f, badgeWidth, badgeHeight), 
-                        stringFormat);
+                    transform.Translate(
+                        badgeX + ((badgeWidth - glyphWidth) / 2f),
+                        badgeY + ((badgeHeight - glyphHeight) / 2f));
+                    transform.Scale(scale, scale);
+                    transform.Translate(-glyphBounds.X, -glyphBounds.Y);
+
+                    glyphs.Transform(transform);
+                    graphics.FillPath(textBrush, glyphs);
                 }
             }
 
             return Icon.FromHandle(bitmap.GetHicon());
         }
 
-        // Draws the RSS mark (dot plus two concentric arcs) filling a square canvas of
-        // side <paramref name="side"/>. All metrics are ratios of the side so the mark
-        // is identical to the generated app icon at any resolution. A positive
-        // <paramref name="outset"/> fattens the stroke, producing the halo pass.
-        private static void DrawRssMark(Graphics graphics, float side, Color color, float outset)
+        // Draws the RSS mark (dot plus two concentric arcs) inside a square box of side
+        // <paramref name="side"/> whose top-left corner sits at (<paramref name="x"/>,
+        // <paramref name="y"/>). All metrics are ratios of the side, so the mark is
+        // identical to the generated app icon at any resolution.
+        private static void DrawRssMark(Graphics graphics, float x, float y, float side, Color color)
         {
-            float originX = side * 0.215f;
-            float originY = side * 0.785f;
-            float dotRadius = side * 0.105f + outset;
-            float strokeWidth = side * 0.135f + (outset * 2f);
+            float originX = x + (side * 0.215f);
+            float originY = y + (side * 0.785f);
+            float dotRadius = side * 0.105f;
+            float strokeWidth = side * 0.135f;
 
             using (var brush = new SolidBrush(color))
             {

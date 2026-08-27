@@ -96,6 +96,9 @@ function New-IconBitmap {
         $path = New-RoundedPath -X $px -Y $py -W $plate -H $plate -R $radius
         $rect = New-Object System.Drawing.RectangleF($px, $py, $plate, $plate)
         $grad = New-Object System.Drawing.Drawing2D.LinearGradientBrush($rect, $PlateTop, $PlateBottom, 90.0)
+        # Brush rect equal to the fill rect otherwise leaves a wrap hairline of the
+        # wrong color along the gradient's start edge.
+        $grad.WrapMode = [System.Drawing.Drawing2D.WrapMode]::TileFlipXY
         $g.FillPath($grad, $path)
         $grad.Dispose()
         $path.Dispose()
