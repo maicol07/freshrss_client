@@ -6,6 +6,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using TUnit.Assertions;
 using TUnit.Core;
+using FreshRssClient.Models;
 using FreshRssClient.Services;
 using FreshRssClient.ViewModels;
 

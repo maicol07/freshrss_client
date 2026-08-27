@@ -8,6 +8,7 @@ using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using FreshRssClient.Helpers;
 using FreshRssClient.ViewModels;
+using FreshRssClient.Models;
 using FreshRssClient.Services;
 using FreshRssClient.Views;
 

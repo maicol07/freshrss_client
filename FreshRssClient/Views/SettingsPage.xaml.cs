@@ -8,6 +8,7 @@ using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Media;
 using CommunityToolkit.WinUI.Controls;
 using FreshRssClient.ViewModels;
+using FreshRssClient.Models;
 using FreshRssClient.Services;
 
 namespace FreshRssClient.Views

@@ -11,6 +11,7 @@ using Microsoft.UI.Xaml.Media.Imaging;
 using Microsoft.UI.Xaml.Media.Animation;
 using Windows.System;
 using FreshRssClient.ViewModels;
+using FreshRssClient.Models;
 using FreshRssClient.Services;
 using FreshRssClient.Helpers;
 

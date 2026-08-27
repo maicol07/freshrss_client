@@ -4,7 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:services="using:FreshRssClient.Services"
+    xmlns:models="using:FreshRssClient.Models"
     xmlns:views="using:FreshRssClient.Views"
     mc:Ignorable="d">
 
@@ -211,7 +211,7 @@
         </MenuFlyout>
 
         <!-- ListView Item Template -->
-        <DataTemplate x:Key="ArticleListTemplate" x:DataType="services:RssArticle">
+        <DataTemplate x:Key="ArticleListTemplate" x:DataType="models:RssArticle">
             <Grid Padding="12,10" ContextFlyout="{StaticResource ArticleContextFlyout}" PointerPressed="OnItemPointerPressed">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
@@ -306,7 +306,7 @@
         </DataTemplate>
 
         <!-- GridView Item Template -->
-        <DataTemplate x:Key="ArticleGridTemplate" x:DataType="services:RssArticle">
+        <DataTemplate x:Key="ArticleGridTemplate" x:DataType="models:RssArticle">
             <Border Width="260" Height="280" Margin="0"
                     Background="Transparent"
                     CornerRadius="8"

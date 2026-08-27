@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using TUnit.Assertions;
 using TUnit.Core;
+using FreshRssClient.Models;
 using FreshRssClient.Services;
 
 namespace FreshRssClient.Tests

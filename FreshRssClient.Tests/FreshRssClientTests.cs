@@ -1,3 +1,4 @@
+using FreshRssClient.Models;
 using FreshRssClient.Services;
 using TUnit.Assertions;
 using TUnit.Core;

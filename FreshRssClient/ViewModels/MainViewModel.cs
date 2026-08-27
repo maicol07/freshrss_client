@@ -1,16 +1,14 @@
 using System;
 using System.Collections.ObjectModel;
-using System.IO;
 using System.Linq;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.UI.Dispatching;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using FreshRssClient.Models;
 using FreshRssClient.Services;
 using FreshRssClient.Helpers;
-using Windows.Security.Credentials;
 
 namespace FreshRssClient.ViewModels
 {
@@ -24,15 +22,13 @@ namespace FreshRssClient.ViewModels
         private readonly IFreshRssService _freshRssService;
         private readonly INotificationService _notificationService;
         private readonly IArticleImageResolver _articleImageResolver;
+        private readonly ILocalStore _localStore;
         private readonly DispatcherQueue? _dispatcherQueue;
         private CancellationTokenSource? _syncCts;
         private CancellationTokenSource? _syncTimerCts;
         private CancellationTokenSource? _imageEnrichmentCts;
         private readonly object _syncLock = new();
-        private readonly object _fileLock = new();
-        private readonly bool _credentialLockerEnabled;
         private TrayIconHelper? _trayIconHelper;
-        private readonly string _sentNotificationsFilePath;
         private HashSet<string> _sentNotificationIds = new();
 
         // Images resolved from the web (or already present in the offline cache), so a later sync
@@ -56,9 +52,6 @@ namespace FreshRssClient.ViewModels
                 return _syncCts.Token;
             }
         }
-        private readonly string _settingsFilePath;
-        private readonly string _cacheFilePath;
-        private readonly string _pendingReadsFilePath;
 
         // Settings Form Properties
         private string _serverUrl = string.Empty;
@@ -647,11 +640,13 @@ namespace FreshRssClient.ViewModels
             INotificationService? notificationService = null,
             DispatcherQueue? dispatcherQueue = null,
             string? customDataFolder = null,
-            IArticleImageResolver? articleImageResolver = null)
+            IArticleImageResolver? articleImageResolver = null,
+            ILocalStore? localStore = null)
         {
             _freshRssService = freshRssService ?? new FreshRssService();
             _notificationService = notificationService ?? new NotificationService();
             _articleImageResolver = articleImageResolver ?? new ArticleImageResolver();
+            _localStore = localStore ?? new LocalStore(customDataFolder);
             
             try
             {
@@ -662,16 +657,7 @@ namespace FreshRssClient.ViewModels
                 _dispatcherQueue = null;
             }
 
-            // Set settings path inside LocalAppData or custom data folder
-            var localFolder = customDataFolder ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "FreshRssClient");
-            _credentialLockerEnabled = customDataFolder == null;
-            Directory.CreateDirectory(localFolder);
-            _settingsFilePath = Path.Combine(localFolder, "settings.json");
-            _cacheFilePath = Path.Combine(localFolder, "cache.json");
-            _pendingReadsFilePath = Path.Combine(localFolder, "pending_reads.json");
-            _sentNotificationsFilePath = Path.Combine(localFolder, "sent_notifications.json");
-
-            _sentNotificationIds = LoadSentNotifications();
+            _sentNotificationIds = _localStore.LoadSentNotifications();
 
             SyncCommand = new AsyncRelayCommand(SyncFeedsAsync);
             SaveSettingsCommand = new RelayCommand(SaveSettings);
@@ -906,10 +892,10 @@ namespace FreshRssClient.ViewModels
 
             if (token.IsCancellationRequested) return;
 
-            SaveCache(fetchedCategories, fetchedFeeds, fetchedArticles, activeStreamId ?? "all");
+            _localStore.SaveCache(fetchedCategories, fetchedFeeds, fetchedArticles, activeStreamId ?? "all");
             if (activeStreamId != null)
             {
-                SaveCache(fetchedCategories, fetchedFeeds, notificationArticles, "all");
+                _localStore.SaveCache(fetchedCategories, fetchedFeeds, notificationArticles, "all");
             }
 
             EnqueueOnDispatcher(() =>
@@ -976,7 +962,7 @@ namespace FreshRssClient.ViewModels
                     }
                     if (notificationsAdded)
                     {
-                        SaveSentNotifications();
+                        _localStore.SaveSentNotifications(_sentNotificationIds);
                     }
                 }
                 else
@@ -994,7 +980,7 @@ namespace FreshRssClient.ViewModels
                     }
                     if (notificationsAdded)
                     {
-                        SaveSentNotifications();
+                        _localStore.SaveSentNotifications(_sentNotificationIds);
                     }
                 }
 
@@ -1097,7 +1083,7 @@ namespace FreshRssClient.ViewModels
 
             if (!resolvedImages.IsEmpty && !token.IsCancellationRequested)
             {
-                UpdateArticleImagesInCache(resolvedImages);
+                _localStore.UpdateArticleImagesInCache(resolvedImages);
             }
         }
 
@@ -1144,50 +1130,6 @@ namespace FreshRssClient.ViewModels
             DebugLog.Write(ImageLogTag, $"applico immagine a {articleId} (in lista: {displayed != null}, in sorgente: {source != null}): {imageUrl}");
         }
 
-        private void UpdateArticleImagesInCache(IReadOnlyDictionary<string, string> imagesByArticleId)
-        {
-            lock (_fileLock)
-            {
-                try
-                {
-                    if (!File.Exists(_cacheFilePath))
-                    {
-                        return;
-                    }
-
-                    var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-                    var cache = JsonSerializer.Deserialize<OfflineCache>(File.ReadAllText(_cacheFilePath), options);
-                    if (cache?.ArticlesByStream == null)
-                    {
-                        return;
-                    }
-
-                    bool modified = false;
-                    foreach (var articles in cache.ArticlesByStream.Values)
-                    {
-                        foreach (var article in articles)
-                        {
-                            if (string.IsNullOrEmpty(article.ImageUrl) &&
-                                imagesByArticleId.TryGetValue(article.Id, out var imageUrl))
-                            {
-                                article.ImageUrl = imageUrl;
-                                modified = true;
-                            }
-                        }
-                    }
-
-                    if (modified)
-                    {
-                        WriteJsonAtomically(_cacheFilePath, JsonSerializer.Serialize(cache));
-                    }
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Failed to update article images in cache: {ex.Message}");
-                }
-            }
-        }
-
         public async Task MarkArticleAsReadAsync(RssArticle article)
         {
             if (article.IsRead) return;
@@ -1199,10 +1141,10 @@ namespace FreshRssClient.ViewModels
             UpdateLocalUnreadCounts(article.FeedId);
 
             // Add to pending reads list and save
-            SetPendingReadState(article.Id, true);
+            _localStore.SetPendingReadState(article.Id, true);
 
             // Update local cache so that this article's read status is saved offline
-            UpdateArticleReadStatusInCache(article.Id, true);
+            _localStore.UpdateArticleReadStatusInCache(article.Id, true);
 
             // Dismiss Action Center notification if active
             _notificationService.DismissNotification(article.Id);
@@ -1213,7 +1155,7 @@ namespace FreshRssClient.ViewModels
             if (success)
             {
                 // If api succeeded, remove from pending reads
-                RemovePendingReadState(article.Id);
+                _localStore.RemovePendingReadState(article.Id);
             }
         }
 
@@ -1228,14 +1170,14 @@ namespace FreshRssClient.ViewModels
             UpdateLocalUnreadCountsForUnread(article.FeedId);
 
             // Update local cache so that this article's read status is saved offline
-            UpdateArticleReadStatusInCache(article.Id, false);
+            _localStore.UpdateArticleReadStatusInCache(article.Id, false);
 
-            SetPendingReadState(article.Id, false);
+            _localStore.SetPendingReadState(article.Id, false);
 
             // Call API
             if (await _freshRssService.MarkAsUnreadAsync(article.Id))
             {
-                RemovePendingReadState(article.Id);
+                _localStore.RemovePendingReadState(article.Id);
             }
         }
 
@@ -1260,31 +1202,22 @@ namespace FreshRssClient.ViewModels
 
         private void SaveSettingsToFile()
         {
-            try
+            var settings = new AppSettings
             {
-                var settings = new AppSettings
-                {
-                    ServerUrl = ServerUrl,
-                    Username = Username,
-                    SyncInterval = SyncInterval,
-                    ShowUnreadOnly = ShowUnreadOnly,
-                    ArticleFilter = ArticleFilter,
-                    MaxReadArticles = MaxReadArticles,
-                    Language = Language,
-                    UseGridLayout = UseGridLayout,
-                    OpenLinksInBrowser = OpenLinksInBrowser,
-                    AutoStartWithWindows = AutoStartWithWindows,
-                    StartMinimizedInTray = StartMinimizedInTray
-                };
+                ServerUrl = ServerUrl,
+                Username = Username,
+                SyncInterval = SyncInterval,
+                ShowUnreadOnly = ShowUnreadOnly,
+                ArticleFilter = ArticleFilter,
+                MaxReadArticles = MaxReadArticles,
+                Language = Language,
+                UseGridLayout = UseGridLayout,
+                OpenLinksInBrowser = OpenLinksInBrowser,
+                AutoStartWithWindows = AutoStartWithWindows,
+                StartMinimizedInTray = StartMinimizedInTray
+            };
 
-                var json = JsonSerializer.Serialize(settings);
-                WriteJsonAtomically(_settingsFilePath, json);
-                SaveCredential();
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Failed to save settings: {ex.Message}");
-            }
+            _localStore.SaveSettings(settings, ApiPassword);
         }
 
         public void SaveAndApplySettings(bool reconnect = false)
@@ -1325,46 +1258,27 @@ namespace FreshRssClient.ViewModels
 
         private void LoadSettings()
         {
-            try
-            {
-                if (File.Exists(_settingsFilePath))
-                {
-                    var json = File.ReadAllText(_settingsFilePath);
-                    string legacyPassword = string.Empty;
-                    using (var document = JsonDocument.Parse(json))
-                    {
-                        if (document.RootElement.TryGetProperty("ApiPassword", out var passwordElement))
-                        {
-                            legacyPassword = passwordElement.GetString() ?? string.Empty;
-                        }
-                    }
-                    var settings = JsonSerializer.Deserialize<AppSettings>(json);
-                    if (settings != null)
-                    {
-                        _serverUrl = settings.ServerUrl;
-                        _username = settings.Username;
-                        _apiPassword = LoadCredential() ?? legacyPassword;
-                        _syncInterval = settings.SyncInterval;
-                        _articleFilter = settings.ArticleFilter ?? (settings.ShowUnreadOnly ? "Unread" : "All");
-                        _showUnreadOnly = _articleFilter == "Unread";
-                        _maxReadArticles = settings.MaxReadArticles;
-                        _language = settings.Language;
-                        _useGridLayout = settings.UseGridLayout;
-                        _openLinksInBrowser = settings.OpenLinksInBrowser;
-                        _fetchMissingImagesFromWeb = settings.FetchMissingImagesFromWeb;
-                        _autoStartWithWindows = settings.AutoStartWithWindows;
-                        _startMinimizedInTray = settings.StartMinimizedInTray;
+            var (settings, legacyPassword) = _localStore.LoadSettings();
+            if (settings == null) return;
 
-                        if (_credentialLockerEnabled && !string.IsNullOrEmpty(legacyPassword))
-                        {
-                            SaveSettingsToFile();
-                        }
-                    }
-                }
-            }
-            catch
+            _serverUrl = settings.ServerUrl;
+            _username = settings.Username;
+            _apiPassword = _localStore.LoadCredential(settings.Username) ?? legacyPassword;
+            _syncInterval = settings.SyncInterval;
+            _articleFilter = settings.ArticleFilter ?? (settings.ShowUnreadOnly ? "Unread" : "All");
+            _showUnreadOnly = _articleFilter == "Unread";
+            _maxReadArticles = settings.MaxReadArticles;
+            _language = settings.Language;
+            _useGridLayout = settings.UseGridLayout;
+            _openLinksInBrowser = settings.OpenLinksInBrowser;
+            _fetchMissingImagesFromWeb = settings.FetchMissingImagesFromWeb;
+            _autoStartWithWindows = settings.AutoStartWithWindows;
+            _startMinimizedInTray = settings.StartMinimizedInTray;
+
+            // Migrate a legacy plaintext password into the credential locker
+            if (_localStore.CredentialLockerEnabled && !string.IsNullOrEmpty(legacyPassword))
             {
-                // Fallback to defaults
+                SaveSettingsToFile();
             }
         }
 
@@ -1378,83 +1292,27 @@ namespace FreshRssClient.ViewModels
 
         private void LoadCache()
         {
-            try
+            var cache = _localStore.LoadCache();
+            if (cache == null) return;
+
+            Categories.Clear();
+            foreach (var cat in cache.Categories)
             {
-                if (File.Exists(_cacheFilePath))
-                {
-                    var json = File.ReadAllText(_cacheFilePath);
-                    var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-                    var cache = JsonSerializer.Deserialize<OfflineCache>(json, options);
-                    
-                    if (cache != null)
-                    {
-                        Categories.Clear();
-                        foreach (var cat in cache.Categories)
-                        {
-                            Categories.Add(cat);
-                        }
-
-                        int totalUnread = cache.Feeds.Sum(f => f.UnreadCount);
-                        UnreadCount = totalUnread;
-
-                        string activeKey = ActiveStreamId ?? "all";
-                        var articles = GetCachedArticles(cache, activeKey);
-                        
-                        ApplyKnownImages(articles);
-                        _currentAllArticles.Clear();
-                        _currentAllArticles.AddRange(articles);
-                        ApplyLocalSearch();
-                        StartImageEnrichment();
-
-                        NavigationStructureChanged?.Invoke(this, EventArgs.Empty);
-                    }
-                }
+                Categories.Add(cat);
             }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Failed to load cache: {ex.Message}");
-            }
-        }
 
-        private void SaveCache(List<RssCategory> fetchedCategories, List<RssFeed> fetchedFeeds, List<RssArticle> fetchedArticles, string activeKey)
-        {
-            lock (_fileLock)
-            {
-                try
-                {
-                    OfflineCache cache;
-                
-                if (File.Exists(_cacheFilePath))
-                {
-                    try
-                    {
-                        var json = File.ReadAllText(_cacheFilePath);
-                        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-                        cache = JsonSerializer.Deserialize<OfflineCache>(json, options) ?? new OfflineCache();
-                    }
-                    catch
-                    {
-                        cache = new OfflineCache();
-                    }
-                }
-                else
-                {
-                    cache = new OfflineCache();
-                }
+            UnreadCount = cache.Feeds.Sum(f => f.UnreadCount);
 
-                cache.Categories = fetchedCategories;
-                cache.Feeds = fetchedFeeds;
+            string activeKey = ActiveStreamId ?? "all";
+            var articles = GetCachedArticles(cache, activeKey);
 
-                    cache.ArticlesByStream ??= new Dictionary<string, List<RssArticle>>();
-                    cache.ArticlesByStream[activeKey] = fetchedArticles;
+            ApplyKnownImages(articles);
+            _currentAllArticles.Clear();
+            _currentAllArticles.AddRange(articles);
+            ApplyLocalSearch();
+            StartImageEnrichment();
 
-                    WriteJsonAtomically(_cacheFilePath, JsonSerializer.Serialize(cache));
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Failed to save cache: {ex.Message}");
-                }
-            }
+            NavigationStructureChanged?.Invoke(this, EventArgs.Empty);
         }
 
         private List<RssArticle> GetCachedArticles(OfflineCache cache, string activeKey)
@@ -1503,39 +1361,21 @@ namespace FreshRssClient.ViewModels
 
         private void LoadCachedArticlesForActiveStream()
         {
-            try
+            var cache = _localStore.LoadCache();
+            if (cache == null)
             {
-                if (File.Exists(_cacheFilePath))
-                {
-                    var json = File.ReadAllText(_cacheFilePath);
-                    var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-                    var cache = JsonSerializer.Deserialize<OfflineCache>(json, options);
-                    
-                    if (cache != null)
-                    {
-                        string activeKey = ActiveStreamId ?? "all";
-                        var articles = GetCachedArticles(cache, activeKey);
-                        
-                        ApplyKnownImages(articles);
-                        _currentAllArticles.Clear();
-                        _currentAllArticles.AddRange(articles);
-                        ApplyLocalSearch();
-                        StartImageEnrichment();
-                    }
-                    else
-                    {
-                        Articles.Clear();
-                    }
-                }
-                else
-                {
-                    Articles.Clear();
-                }
+                Articles.Clear();
+                return;
             }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Failed to load cached articles: {ex.Message}");
-            }
+
+            string activeKey = ActiveStreamId ?? "all";
+            var articles = GetCachedArticles(cache, activeKey);
+
+            ApplyKnownImages(articles);
+            _currentAllArticles.Clear();
+            _currentAllArticles.AddRange(articles);
+            ApplyLocalSearch();
+            StartImageEnrichment();
         }
 
         private void UpdateLocalUnreadCounts(string feedId)
@@ -1588,8 +1428,8 @@ namespace FreshRssClient.ViewModels
             foreach (var article in unreadArticles)
             {
                 article.IsRead = true;
-                UpdateArticleReadStatusInCache(article.Id, true);
-                SetPendingReadState(article.Id, true);
+                _localStore.UpdateArticleReadStatusInCache(article.Id, true);
+                _localStore.SetPendingReadState(article.Id, true);
                 _notificationService.DismissNotification(article.Id);
             }
 
@@ -1652,7 +1492,7 @@ namespace FreshRssClient.ViewModels
                 bool success = await _freshRssService.MarkAsReadAsync(article.Id);
                 if (success)
                 {
-                    RemovePendingReadState(article.Id);
+                    _localStore.RemovePendingReadState(article.Id);
                 }
             }).ToList();
 
@@ -1714,8 +1554,8 @@ namespace FreshRssClient.ViewModels
             foreach (var article in articlesToMark)
             {
                 article.IsRead = true;
-                UpdateArticleReadStatusInCache(article.Id, true);
-                SetPendingReadState(article.Id, true);
+                _localStore.UpdateArticleReadStatusInCache(article.Id, true);
+                _localStore.SetPendingReadState(article.Id, true);
                 UpdateLocalUnreadCounts(article.FeedId);
                 _notificationService.DismissNotification(article.Id);
             }
@@ -1726,7 +1566,7 @@ namespace FreshRssClient.ViewModels
                 bool success = await _freshRssService.MarkAsReadAsync(article.Id);
                 if (success)
                 {
-                    RemovePendingReadState(article.Id);
+                    _localStore.RemovePendingReadState(article.Id);
                 }
             }).ToList();
 
@@ -1771,8 +1611,8 @@ namespace FreshRssClient.ViewModels
                 foreach (var article in articlesToMark)
                 {
                     article.IsRead = true;
-                    UpdateArticleReadStatusInCache(article.Id, true);
-                    SetPendingReadState(article.Id, true);
+                    _localStore.UpdateArticleReadStatusInCache(article.Id, true);
+                    _localStore.SetPendingReadState(article.Id, true);
                     UpdateLocalUnreadCounts(article.FeedId);
                     _notificationService.DismissNotification(article.Id);
                 }
@@ -1782,7 +1622,7 @@ namespace FreshRssClient.ViewModels
                     bool success = await _freshRssService.MarkAsReadAsync(article.Id);
                     if (success)
                     {
-                        RemovePendingReadState(article.Id);
+                        _localStore.RemovePendingReadState(article.Id);
                     }
                 }).ToList();
 
@@ -1793,149 +1633,9 @@ namespace FreshRssClient.ViewModels
             IsMultiSelectMode = false;
         }
 
-        private Dictionary<string, bool> LoadPendingReads()
-        {
-            lock (_fileLock)
-            {
-                try
-                {
-                    if (File.Exists(_pendingReadsFilePath))
-                    {
-                        var json = File.ReadAllText(_pendingReadsFilePath);
-                        try
-                        {
-                            return JsonSerializer.Deserialize<Dictionary<string, bool>>(json) ?? new();
-                        }
-                        catch (JsonException)
-                        {
-                            var legacyReads = JsonSerializer.Deserialize<List<string>>(json) ?? new();
-                            return legacyReads.ToDictionary(id => id, _ => true);
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Failed to load pending reads: {ex.Message}");
-                }
-                return new Dictionary<string, bool>();
-            }
-        }
-
-        private HashSet<string> LoadSentNotifications()
-        {
-            try
-            {
-                if (File.Exists(_sentNotificationsFilePath))
-                {
-                    var json = File.ReadAllText(_sentNotificationsFilePath);
-                    var list = JsonSerializer.Deserialize<List<string>>(json);
-                    if (list != null)
-                    {
-                        return new HashSet<string>(list);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Failed to load sent notifications: {ex.Message}");
-            }
-            return new HashSet<string>();
-        }
-
-        private void SaveSentNotifications()
-        {
-            try
-            {
-                // Limit the saved list to the most recent 500 notifications to prevent infinite file growth
-                var list = _sentNotificationIds.Take(500).ToList();
-                var json = JsonSerializer.Serialize(list);
-                File.WriteAllText(_sentNotificationsFilePath, json);
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Failed to save sent notifications: {ex.Message}");
-            }
-        }
-
-        private void SetPendingReadState(string articleId, bool isRead)
-        {
-            lock (_fileLock)
-            {
-                try
-                {
-                    var pending = LoadPendingReads();
-                    pending[articleId] = isRead;
-                    WriteJsonAtomically(_pendingReadsFilePath, JsonSerializer.Serialize(pending));
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Failed to save pending article state: {ex.Message}");
-                }
-            }
-        }
-
-        private void RemovePendingReadState(string articleId)
-        {
-            lock (_fileLock)
-            {
-                try
-                {
-                    var pending = LoadPendingReads();
-                    if (pending.Remove(articleId))
-                    {
-                        WriteJsonAtomically(_pendingReadsFilePath, JsonSerializer.Serialize(pending));
-                    }
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Failed to remove pending article state: {ex.Message}");
-                }
-            }
-        }
-
-        private void UpdateArticleReadStatusInCache(string articleId, bool isRead)
-        {
-            lock (_fileLock)
-            {
-                try
-                {
-                    if (File.Exists(_cacheFilePath))
-                    {
-                        var json = File.ReadAllText(_cacheFilePath);
-                        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-                        var cache = JsonSerializer.Deserialize<OfflineCache>(json, options);
-                    
-                    if (cache?.ArticlesByStream != null)
-                    {
-                        bool modified = false;
-                        foreach (var key in cache.ArticlesByStream.Keys)
-                        {
-                            var articles = cache.ArticlesByStream[key];
-                            var article = articles.FirstOrDefault(a => a.Id == articleId);
-                            if (article != null)
-                            {
-                                article.IsRead = isRead;
-                                modified = true;
-                            }
-                        }
-
-                        if (modified)
-                        {
-                            WriteJsonAtomically(_cacheFilePath, JsonSerializer.Serialize(cache));
-                        }
-                    }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Failed to update article read status in cache: {ex.Message}");
-                }
-            }
-        }
-
         private async Task SyncPendingReadsAsync(CancellationToken cancellationToken = default)
         {
-            var pending = LoadPendingReads();
+            var pending = _localStore.LoadPendingReads();
             if (pending.Count == 0) return;
 
             EnqueueOnDispatcher(() =>
@@ -1968,94 +1668,8 @@ namespace FreshRssClient.ViewModels
                 {
                     pending.Remove(id);
                 }
-                try
-                {
-                    WriteJsonAtomically(_pendingReadsFilePath, JsonSerializer.Serialize(pending));
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Failed to save pending reads: {ex.Message}");
-                }
+                _localStore.SavePendingReads(pending);
             }
-        }
-
-        private void WriteJsonAtomically(string path, string json)
-        {
-            lock (_fileLock)
-            {
-                var temporaryPath = path + ".tmp";
-                File.WriteAllText(temporaryPath, json);
-                File.Move(temporaryPath, path, true);
-            }
-        }
-
-        private string? LoadCredential()
-        {
-            if (!_credentialLockerEnabled || string.IsNullOrWhiteSpace(Username)) return null;
-
-            try
-            {
-                var credential = new PasswordVault().Retrieve("FreshRssClient", Username);
-                credential.RetrievePassword();
-                return credential.Password;
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
-        private void SaveCredential()
-        {
-            if (!_credentialLockerEnabled || string.IsNullOrWhiteSpace(Username)) return;
-
-            try
-            {
-                var vault = new PasswordVault();
-                try
-                {
-                    foreach (var credential in vault.FindAllByResource("FreshRssClient"))
-                    {
-                        vault.Remove(credential);
-                    }
-                }
-                catch
-                {
-                    // The vault throws when no matching credentials exist.
-                }
-
-                if (!string.IsNullOrEmpty(ApiPassword))
-                {
-                    vault.Add(new PasswordCredential("FreshRssClient", Username, ApiPassword));
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Failed to save credentials: {ex.Message}");
-            }
-        }
-
-        private class OfflineCache
-        {
-            public List<RssCategory> Categories { get; set; } = new();
-            public List<RssFeed> Feeds { get; set; } = new();
-            public Dictionary<string, List<RssArticle>> ArticlesByStream { get; set; } = new();
-        }
-
-        private class AppSettings
-        {
-            public string ServerUrl { get; set; } = string.Empty;
-            public string Username { get; set; } = string.Empty;
-            public int SyncInterval { get; set; } = 15;
-            public bool ShowUnreadOnly { get; set; } = false;
-            public string ArticleFilter { get; set; } = "All";
-            public int MaxReadArticles { get; set; } = 50;
-            public string Language { get; set; } = "it";
-            public bool UseGridLayout { get; set; }
-            public bool OpenLinksInBrowser { get; set; }
-            public bool FetchMissingImagesFromWeb { get; set; } = true;
-            public bool AutoStartWithWindows { get; set; }
-            public bool StartMinimizedInTray { get; set; }
         }
     }
 }
