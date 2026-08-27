@@ -215,32 +215,13 @@ namespace FreshRssClient.Helpers
             graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
             graphics.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
 
-            // Monochromatic RSS Symbol (white with subtle dark silhouette background for high contrast on light/dark themes)
-            var darkPenColor = Color.FromArgb(160, 15, 15, 15);
-            var whitePenColor = Color.White;
-            
-            using (var darkBrush = new SolidBrush(darkPenColor))
-            using (var whiteBrush = new SolidBrush(whitePenColor))
-            {
-                // 1. Bottom-left dot (concentric around (9f, 23f), padded by 5.5px from left and bottom margins)
-                // Shadow / Outline (radius = 4.5f)
-                graphics.FillEllipse(darkBrush, 4.5f, size - 13.5f, 9f, 9f);
-                // White center (radius = 3.5f)
-                graphics.FillEllipse(whiteBrush, 5.5f, size - 12.5f, 7f, 7f);
-            }
-
-            // 2. Concentric curves (concentric around (9f, 23f))
-            using (var shadowPen = new Pen(darkPenColor, 5f))
-            using (var whitePen = new Pen(whitePenColor, 3f))
-            {
-                // Shadow arcs first
-                graphics.DrawArc(shadowPen, -1f, size - 19f, 20f, 20f, 270f, 90f);
-                graphics.DrawArc(shadowPen, -8f, size - 26f, 34f, 34f, 270f, 90f);
-
-                // White arcs on top
-                graphics.DrawArc(whitePen, -1f, size - 19f, 20f, 20f, 270f, 90f);
-                graphics.DrawArc(whitePen, -8f, size - 26f, 34f, 34f, 270f, 90f);
-            }
+            // Monochromatic RSS mark, same proportions as the app icon (see
+            // tools/generate-icons.ps1). White glyph over a dark halo instead of the
+            // brand-colored plate: at 16-20px a filled plate swallows the glyph, and
+            // the halo keeps it readable on both light and dark taskbars.
+            var haloColor = Color.FromArgb(160, 15, 15, 15);
+            DrawRssMark(graphics, size, haloColor, outset: 1.8f);
+            DrawRssMark(graphics, size, Color.White, outset: 0f);
 
             // 3. Draw premium notification badge with unread count text if unreadCount > 0
             if (unreadCount > 0)
@@ -295,6 +276,34 @@ namespace FreshRssClient.Helpers
             }
 
             return Icon.FromHandle(bitmap.GetHicon());
+        }
+
+        // Draws the RSS mark (dot plus two concentric arcs) filling a square canvas of
+        // side <paramref name="side"/>. All metrics are ratios of the side so the mark
+        // is identical to the generated app icon at any resolution. A positive
+        // <paramref name="outset"/> fattens the stroke, producing the halo pass.
+        private static void DrawRssMark(Graphics graphics, float side, Color color, float outset)
+        {
+            float originX = side * 0.215f;
+            float originY = side * 0.785f;
+            float dotRadius = side * 0.105f + outset;
+            float strokeWidth = side * 0.135f + (outset * 2f);
+
+            using (var brush = new SolidBrush(color))
+            {
+                graphics.FillEllipse(brush, originX - dotRadius, originY - dotRadius, dotRadius * 2f, dotRadius * 2f);
+            }
+
+            using var pen = new Pen(color, strokeWidth)
+            {
+                StartCap = System.Drawing.Drawing2D.LineCap.Round,
+                EndCap = System.Drawing.Drawing2D.LineCap.Round
+            };
+
+            foreach (float radius in new[] { side * 0.34f, side * 0.60f })
+            {
+                graphics.DrawArc(pen, originX - radius, originY - radius, radius * 2f, radius * 2f, 270f, 90f);
+            }
         }
 
         private IntPtr WindowSubclassWndProc(IntPtr hWnd, uint uMsg, IntPtr wParam, IntPtr lParam, uint uIdSubclass, IntPtr dwRefData)
@@ -414,12 +423,5 @@ namespace FreshRssClient.Helpers
             }
         }
 
-        public static void DrawRoundedRectangle(this Graphics graphics, Pen pen, float x, float y, float width, float height, float radius)
-        {
-            using (var path = GetRoundedRectanglePath(x, y, width, height, radius))
-            {
-                graphics.DrawPath(pen, path);
-            }
-        }
     }
 }
