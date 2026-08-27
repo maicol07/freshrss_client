@@ -301,4 +301,9 @@
   <data name="TrayExit" xml:space="preserve">
     <value>Exit</value>
   </data>
-</root>
+  <data name="FetchMissingImagesLabel" xml:space="preserve">
+    <value>Fetch missing images from the web</value>
+  </data>
+  <data name="FetchMissingImagesCardDesc" xml:space="preserve">
+    <value>When a feed entry has no image, read the article page social tags (Open Graph) to find one. The app contacts the publisher sites directly.</value>
+  </data></root>

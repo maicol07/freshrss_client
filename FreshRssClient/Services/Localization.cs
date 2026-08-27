@@ -67,6 +67,8 @@ namespace FreshRssClient.Services
         string DefaultFilterCardHeader { get; }
         string DefaultFilterCardDesc { get; }
         string OpenInBrowserCardDesc { get; }
+        string FetchMissingImagesLabel { get; }
+        string FetchMissingImagesCardDesc { get; }
         string SystemExpanderHeader { get; }
         string SystemExpanderDesc { get; }
         string AutoStartCardDesc { get; }
@@ -167,6 +169,8 @@ namespace FreshRssClient.Services
         public string DefaultFilterCardHeader => Get(nameof(DefaultFilterCardHeader));
         public string DefaultFilterCardDesc => Get(nameof(DefaultFilterCardDesc));
         public string OpenInBrowserCardDesc => Get(nameof(OpenInBrowserCardDesc));
+        public string FetchMissingImagesLabel => Get(nameof(FetchMissingImagesLabel));
+        public string FetchMissingImagesCardDesc => Get(nameof(FetchMissingImagesCardDesc));
         public string SystemExpanderHeader => Get(nameof(SystemExpanderHeader));
         public string SystemExpanderDesc => Get(nameof(SystemExpanderDesc));
         public string AutoStartCardDesc => Get(nameof(AutoStartCardDesc));

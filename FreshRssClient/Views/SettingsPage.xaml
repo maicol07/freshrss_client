@@ -86,6 +86,11 @@
                     <labs:SettingsCard x:Name="OpenInBrowserCard">
                         <ToggleSwitch x:Name="OpenInBrowserToggle" Toggled="OnOpenInBrowserToggled"/>
                     </labs:SettingsCard>
+
+                    <!-- Fetch Missing Images Toggle -->
+                    <labs:SettingsCard x:Name="FetchMissingImagesCard">
+                        <ToggleSwitch x:Name="FetchMissingImagesToggle" Toggled="OnFetchMissingImagesToggled"/>
+                    </labs:SettingsCard>
                 </labs:SettingsExpander.Items>
             </labs:SettingsExpander>
 

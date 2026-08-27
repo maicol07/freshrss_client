@@ -419,8 +419,12 @@ namespace FreshRssClient.Services
                         IsRead = isRead
                     };
 
-                    // Extract image from body content if it exists
-                    string? img = ExtractFirstImage(article.Content);
+                    // Prefer the feed enclosure, then fall back to the first image in the body content
+                    string? img = ExtractEnclosureImage(item.Enclosure);
+                    if (string.IsNullOrEmpty(img))
+                    {
+                        img = ExtractFirstImage(article.Content);
+                    }
                     if (string.IsNullOrEmpty(img))
                     {
                         img = ExtractFirstImage(article.Summary);
@@ -684,6 +688,25 @@ namespace FreshRssClient.Services
             }
         }
 
+        private static string? ExtractEnclosureImage(List<GReaderEnclosure>? enclosures)
+        {
+            if (enclosures == null)
+            {
+                return null;
+            }
+
+            foreach (var enclosure in enclosures)
+            {
+                if (enclosure.Type?.StartsWith("image/", StringComparison.OrdinalIgnoreCase) == true &&
+                    WebUri.TryCreate(enclosure.Href, out var imageUri))
+                {
+                    return imageUri.ToString();
+                }
+            }
+
+            return null;
+        }
+
         private string? ExtractFirstImage(string html)
         {
             if (string.IsNullOrEmpty(html)) return null;
@@ -774,6 +797,13 @@ namespace FreshRssClient.Services
             public GReaderContent? Content { get; set; }
             public GReaderOrigin? Origin { get; set; }
             public List<string>? Categories { get; set; }
+            public List<GReaderEnclosure>? Enclosure { get; set; }
+        }
+
+        private class GReaderEnclosure
+        {
+            public string? Href { get; set; }
+            public string? Type { get; set; }
         }
 
         private class GReaderLink

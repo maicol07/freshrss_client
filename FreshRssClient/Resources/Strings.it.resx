@@ -301,4 +301,9 @@
   <data name="TrayExit" xml:space="preserve">
     <value>Esci</value>
   </data>
-</root>
+  <data name="FetchMissingImagesLabel" xml:space="preserve">
+    <value>Recupera le immagini mancanti dal web</value>
+  </data>
+  <data name="FetchMissingImagesCardDesc" xml:space="preserve">
+    <value>Quando un articolo del feed non ha immagine, la cerca nei tag social (Open Graph) della pagina. L'app contatta direttamente i siti degli editori.</value>
+  </data></root>

@@ -16,17 +16,28 @@ namespace FreshRssClient.ViewModels
 {
     public class MainViewModel : ObservableObject, IDisposable
     {
+        private const string ImageLogTag = "ImageEnrichment";
+        private const int MaxImageEnrichmentPerSync = 25;
+        private const int ImageEnrichmentConcurrency = 4;
+        private const int ImageEnrichmentPassTimeoutSeconds = 30;
+
         private readonly IFreshRssService _freshRssService;
         private readonly INotificationService _notificationService;
+        private readonly IArticleImageResolver _articleImageResolver;
         private readonly DispatcherQueue? _dispatcherQueue;
         private CancellationTokenSource? _syncCts;
         private CancellationTokenSource? _syncTimerCts;
+        private CancellationTokenSource? _imageEnrichmentCts;
         private readonly object _syncLock = new();
         private readonly object _fileLock = new();
         private readonly bool _credentialLockerEnabled;
         private TrayIconHelper? _trayIconHelper;
         private readonly string _sentNotificationsFilePath;
         private HashSet<string> _sentNotificationIds = new();
+
+        // Images resolved from the web (or already present in the offline cache), so a later sync
+        // cannot overwrite them with the image-less articles coming from the server.
+        private readonly System.Collections.Concurrent.ConcurrentDictionary<string, string> _knownImagesByArticleId = new(StringComparer.Ordinal);
 
         private CancellationToken CancelAndGetNewToken()
         {
@@ -333,6 +344,19 @@ namespace FreshRssClient.ViewModels
             }
         }
 
+        private bool _fetchMissingImagesFromWeb = true;
+        public bool FetchMissingImagesFromWeb
+        {
+            get => _fetchMissingImagesFromWeb;
+            set
+            {
+                if (SetProperty(ref _fetchMissingImagesFromWeb, value))
+                {
+                    SaveAndApplySettings(reconnect: false);
+                }
+            }
+        }
+
         private bool _autoStartWithWindows = false;
         public bool AutoStartWithWindows
         {
@@ -457,7 +481,11 @@ namespace FreshRssClient.ViewModels
                         existing.Title = fetched.Title;
                         existing.Summary = fetched.Summary;
                         existing.Content = fetched.Content;
-                        existing.ImageUrl = fetched.ImageUrl;
+                        // Keep a web-resolved image if the fetched article has none
+                        if (!string.IsNullOrEmpty(fetched.ImageUrl))
+                        {
+                            existing.ImageUrl = fetched.ImageUrl;
+                        }
                         existing.FeedTitle = fetched.FeedTitle;
                         existing.FeedIconUrl = fetched.FeedIconUrl;
                         existing.PublishDate = fetched.PublishDate;
@@ -476,7 +504,10 @@ namespace FreshRssClient.ViewModels
                             Articles[i].Title = fetched.Title;
                             Articles[i].Summary = fetched.Summary;
                             Articles[i].Content = fetched.Content;
-                            Articles[i].ImageUrl = fetched.ImageUrl;
+                            if (!string.IsNullOrEmpty(fetched.ImageUrl))
+                            {
+                                Articles[i].ImageUrl = fetched.ImageUrl;
+                            }
                             Articles[i].FeedTitle = fetched.FeedTitle;
                             Articles[i].FeedIconUrl = fetched.FeedIconUrl;
                             Articles[i].PublishDate = fetched.PublishDate;
@@ -612,13 +643,15 @@ namespace FreshRssClient.ViewModels
         }
 
         public MainViewModel(
-            IFreshRssService? freshRssService = null, 
+            IFreshRssService? freshRssService = null,
             INotificationService? notificationService = null,
             DispatcherQueue? dispatcherQueue = null,
-            string? customDataFolder = null)
+            string? customDataFolder = null,
+            IArticleImageResolver? articleImageResolver = null)
         {
             _freshRssService = freshRssService ?? new FreshRssService();
             _notificationService = notificationService ?? new NotificationService();
+            _articleImageResolver = articleImageResolver ?? new ArticleImageResolver();
             
             try
             {
@@ -863,6 +896,9 @@ namespace FreshRssClient.ViewModels
                 fetchedArticles = fetchedArticles.Where(article => feedIds.Contains(article.FeedId)).ToList();
             }
 
+            ApplyKnownImages(fetchedArticles);
+            ApplyKnownImages(notificationArticles);
+
             foreach (var article in fetchedArticles)
             {
                 AttachCommands(article);
@@ -973,7 +1009,183 @@ namespace FreshRssClient.ViewModels
 
                 IsSyncing = false;
                 SyncStatusText = LocalizationManager.Current.SyncSuccess;
+
+                StartImageEnrichment();
             });
+        }
+
+        /// <summary>
+        /// Restarts the image enrichment pass for the currently loaded articles, cancelling any pass still in flight.
+        /// Must be called from the UI thread so the article snapshot is taken safely.
+        /// </summary>
+        private void StartImageEnrichment()
+        {
+            if (!FetchMissingImagesFromWeb)
+            {
+                DebugLog.Write(ImageLogTag, "pass non avviato: impostazione disattivata");
+                return;
+            }
+
+            _imageEnrichmentCts?.Cancel();
+            _imageEnrichmentCts?.Dispose();
+            _imageEnrichmentCts = new CancellationTokenSource();
+            var token = _imageEnrichmentCts.Token;
+            SafeFireAndForget.Run(() => EnrichMissingArticleImagesAsync(token));
+        }
+
+        /// <summary>
+        /// Resolves images for articles whose feed entry carries none, by scraping the social/meta tags
+        /// of the linked page. Runs in the background so the article list is never blocked.
+        /// </summary>
+        private async Task EnrichMissingArticleImagesAsync(CancellationToken token)
+        {
+            if (!FetchMissingImagesFromWeb || token.IsCancellationRequested)
+            {
+                return;
+            }
+
+            // Snapshot on the caller (UI) thread before the first await
+            var targets = _currentAllArticles
+                .Where(article => string.IsNullOrEmpty(article.ImageUrl) && !string.IsNullOrEmpty(article.Link))
+                .Take(MaxImageEnrichmentPerSync)
+                .ToList();
+
+            DebugLog.Write(ImageLogTag, $"articoli caricati: {_currentAllArticles.Count}, senza immagine: {_currentAllArticles.Count(article => string.IsNullOrEmpty(article.ImageUrl))}, da elaborare: {targets.Count}");
+
+            if (targets.Count == 0)
+            {
+                return;
+            }
+
+            var resolvedImages = new System.Collections.Concurrent.ConcurrentDictionary<string, string>(StringComparer.Ordinal);
+
+            using var passCts = CancellationTokenSource.CreateLinkedTokenSource(token);
+            passCts.CancelAfter(TimeSpan.FromSeconds(ImageEnrichmentPassTimeoutSeconds));
+            using var throttle = new SemaphoreSlim(ImageEnrichmentConcurrency);
+
+            try
+            {
+                await Task.WhenAll(targets.Select(async article =>
+                {
+                    await throttle.WaitAsync(passCts.Token);
+                    try
+                    {
+                        var imageUrl = await _articleImageResolver.ResolveAsync(article.Link, passCts.Token);
+                        if (!string.IsNullOrEmpty(imageUrl))
+                        {
+                            resolvedImages[article.Id] = imageUrl;
+                            _knownImagesByArticleId[article.Id] = imageUrl;
+                            EnqueueOnDispatcher(() => ApplyResolvedImage(article.Id, imageUrl));
+                        }
+                        else
+                        {
+                            DebugLog.Write(ImageLogTag, $"nessuna immagine per \"{article.Title}\" ({article.Link})");
+                        }
+                    }
+                    finally
+                    {
+                        throttle.Release();
+                    }
+                }));
+            }
+            catch (OperationCanceledException)
+            {
+                DebugLog.Write(ImageLogTag, "pass interrotto (budget scaduto o sync annullata)");
+            }
+
+            DebugLog.Write(ImageLogTag, $"pass concluso: {resolvedImages.Count}/{targets.Count} immagini risolte");
+
+            if (!resolvedImages.IsEmpty && !token.IsCancellationRequested)
+            {
+                UpdateArticleImagesInCache(resolvedImages);
+            }
+        }
+
+        /// <summary>
+        /// Restores images already known for these articles, so a fresh server fetch does not drop them.
+        /// </summary>
+        private void ApplyKnownImages(List<RssArticle> articles)
+        {
+            int restored = 0;
+            foreach (var article in articles)
+            {
+                if (string.IsNullOrEmpty(article.ImageUrl) &&
+                    _knownImagesByArticleId.TryGetValue(article.Id, out var knownImage))
+                {
+                    article.ImageUrl = knownImage;
+                    restored++;
+                }
+                else if (!string.IsNullOrEmpty(article.ImageUrl))
+                {
+                    _knownImagesByArticleId[article.Id] = article.ImageUrl;
+                }
+            }
+
+            if (restored > 0)
+            {
+                DebugLog.Write(ImageLogTag, $"ripristinate {restored} immagini già note sugli articoli scaricati");
+            }
+        }
+
+        private void ApplyResolvedImage(string articleId, string imageUrl)
+        {
+            var displayed = Articles.FirstOrDefault(article => article.Id == articleId);
+            if (displayed != null)
+            {
+                displayed.ImageUrl = imageUrl;
+            }
+
+            var source = _currentAllArticles.FirstOrDefault(article => article.Id == articleId);
+            if (source != null && source != displayed)
+            {
+                source.ImageUrl = imageUrl;
+            }
+
+            DebugLog.Write(ImageLogTag, $"applico immagine a {articleId} (in lista: {displayed != null}, in sorgente: {source != null}): {imageUrl}");
+        }
+
+        private void UpdateArticleImagesInCache(IReadOnlyDictionary<string, string> imagesByArticleId)
+        {
+            lock (_fileLock)
+            {
+                try
+                {
+                    if (!File.Exists(_cacheFilePath))
+                    {
+                        return;
+                    }
+
+                    var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                    var cache = JsonSerializer.Deserialize<OfflineCache>(File.ReadAllText(_cacheFilePath), options);
+                    if (cache?.ArticlesByStream == null)
+                    {
+                        return;
+                    }
+
+                    bool modified = false;
+                    foreach (var articles in cache.ArticlesByStream.Values)
+                    {
+                        foreach (var article in articles)
+                        {
+                            if (string.IsNullOrEmpty(article.ImageUrl) &&
+                                imagesByArticleId.TryGetValue(article.Id, out var imageUrl))
+                            {
+                                article.ImageUrl = imageUrl;
+                                modified = true;
+                            }
+                        }
+                    }
+
+                    if (modified)
+                    {
+                        WriteJsonAtomically(_cacheFilePath, JsonSerializer.Serialize(cache));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Failed to update article images in cache: {ex.Message}");
+                }
+            }
         }
 
         public async Task MarkArticleAsReadAsync(RssArticle article)
@@ -1139,6 +1351,7 @@ namespace FreshRssClient.ViewModels
                         _language = settings.Language;
                         _useGridLayout = settings.UseGridLayout;
                         _openLinksInBrowser = settings.OpenLinksInBrowser;
+                        _fetchMissingImagesFromWeb = settings.FetchMissingImagesFromWeb;
                         _autoStartWithWindows = settings.AutoStartWithWindows;
                         _startMinimizedInTray = settings.StartMinimizedInTray;
 
@@ -1159,6 +1372,7 @@ namespace FreshRssClient.ViewModels
         {
             _syncTimerCts?.Cancel();
             _syncCts?.Cancel();
+            _imageEnrichmentCts?.Cancel();
             GC.SuppressFinalize(this);
         }
 
@@ -1186,9 +1400,11 @@ namespace FreshRssClient.ViewModels
                         string activeKey = ActiveStreamId ?? "all";
                         var articles = GetCachedArticles(cache, activeKey);
                         
+                        ApplyKnownImages(articles);
                         _currentAllArticles.Clear();
                         _currentAllArticles.AddRange(articles);
                         ApplyLocalSearch();
+                        StartImageEnrichment();
 
                         NavigationStructureChanged?.Invoke(this, EventArgs.Empty);
                     }
@@ -1300,9 +1516,11 @@ namespace FreshRssClient.ViewModels
                         string activeKey = ActiveStreamId ?? "all";
                         var articles = GetCachedArticles(cache, activeKey);
                         
+                        ApplyKnownImages(articles);
                         _currentAllArticles.Clear();
                         _currentAllArticles.AddRange(articles);
                         ApplyLocalSearch();
+                        StartImageEnrichment();
                     }
                     else
                     {
@@ -1835,6 +2053,7 @@ namespace FreshRssClient.ViewModels
             public string Language { get; set; } = "it";
             public bool UseGridLayout { get; set; }
             public bool OpenLinksInBrowser { get; set; }
+            public bool FetchMissingImagesFromWeb { get; set; } = true;
             public bool AutoStartWithWindows { get; set; }
             public bool StartMinimizedInTray { get; set; }
         }

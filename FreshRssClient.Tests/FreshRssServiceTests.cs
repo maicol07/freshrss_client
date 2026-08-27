@@ -123,6 +123,57 @@ namespace FreshRssClient.Tests
         }
 
         [Test]
+        public async Task TestFetchArticlesAsync_PrefersEnclosureImageOverBodyImage()
+        {
+            var mockHandler = new AdvancedMockHttpMessageHandler();
+            var service = new FreshRssService(new HttpClient(mockHandler));
+
+            mockHandler.HandlerFunc = req => new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("Auth=token")
+            };
+            await service.AuthenticateAsync("https://example.com", "user", "pass");
+
+            var articlesJson = @"
+            {
+              ""id"": ""reading-list"",
+              ""items"": [
+                {
+                  ""id"": ""item1"",
+                  ""title"": ""With enclosure"",
+                  ""published"": 1716900000,
+                  ""alternate"": [{""href"": ""https://example.com/art1""}],
+                  ""content"": { ""content"": ""Body with <img src='https://example.com/body.jpg' />"" },
+                  ""enclosure"": [
+                    {""href"": ""https://example.com/audio.mp3"", ""type"": ""audio/mpeg""},
+                    {""href"": ""https://example.com/cover.jpg"", ""type"": ""image/jpeg""}
+                  ],
+                  ""origin"": { ""streamId"": ""feed1"", ""title"": ""My Feed"", ""htmlUrl"": ""https://example.com"" },
+                  ""categories"": [""user/-/state/com.google/reading-list""]
+                },
+                {
+                  ""id"": ""item2"",
+                  ""title"": ""Non image enclosure only"",
+                  ""published"": 1716800000,
+                  ""alternate"": [{""href"": ""https://example.com/art2""}],
+                  ""enclosure"": [{""href"": ""https://example.com/audio.mp3"", ""type"": ""audio/mpeg""}],
+                  ""origin"": { ""streamId"": ""feed1"", ""title"": ""My Feed"", ""htmlUrl"": ""https://example.com"" },
+                  ""categories"": [""user/-/state/com.google/reading-list""]
+                }
+              ]
+            }";
+
+            mockHandler.HandlerFunc = req => new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(articlesJson, System.Text.Encoding.UTF8, "application/json")
+            };
+
+            var articles = await service.FetchArticlesAsync(null, false, 50);
+
+            await Assert.That(articles[0].ImageUrl).IsEqualTo("https://example.com/cover.jpg");
+            await Assert.That(articles[1].ImageUrl).IsNull();
+        }
+        [Test]
         public async Task TestFetchArticlesAsync_Success_ParsesJsonAndExtractsImages()
         {
             // Arrange

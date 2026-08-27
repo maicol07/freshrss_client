@@ -370,7 +370,7 @@ namespace FreshRssClient.Views
 
                     if (!string.IsNullOrEmpty(article.ImageUrl))
                     {
-                        try { ArticleImage.Source = new BitmapImage(new Uri(article.ImageUrl)); } catch { }
+                        ArticleImage.Source = ImageLoader.Create(article.ImageUrl);
                         ArticleImageBorder.Visibility = Visibility.Visible;
                     }
                     else
@@ -780,7 +780,7 @@ namespace FreshRssClient.Views
             {
                 try
                 {
-                    return new BitmapImage(new Uri(url));
+                    return ImageLoader.Create(url);
                 }
                 catch
                 {

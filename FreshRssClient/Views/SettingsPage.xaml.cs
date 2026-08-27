@@ -38,6 +38,7 @@ namespace FreshRssClient.Views
                 MaxReadNumberBox.Value = _viewModel.MaxReadArticles;
 
                 OpenInBrowserToggle.IsOn = _viewModel.OpenLinksInBrowser;
+                FetchMissingImagesToggle.IsOn = _viewModel.FetchMissingImagesFromWeb;
 
                 AutoStartToggle.IsOn = _viewModel.AutoStartWithWindows;
                 StartMinimizedToggle.IsOn = _viewModel.StartMinimizedInTray;
@@ -103,6 +104,9 @@ namespace FreshRssClient.Views
                             break;
                         case nameof(MainViewModel.OpenLinksInBrowser):
                             OpenInBrowserToggle.IsOn = _viewModel.OpenLinksInBrowser;
+                            break;
+                        case nameof(MainViewModel.FetchMissingImagesFromWeb):
+                            FetchMissingImagesToggle.IsOn = _viewModel.FetchMissingImagesFromWeb;
                             break;
                         case nameof(MainViewModel.AutoStartWithWindows):
                             AutoStartToggle.IsOn = _viewModel.AutoStartWithWindows;
@@ -190,6 +194,8 @@ namespace FreshRssClient.Views
 
                 OpenInBrowserCard.Header = LocalizationManager.Current.OpenLinksInBrowserLabel;
                 OpenInBrowserCard.Description = LocalizationManager.Current.OpenInBrowserCardDesc;
+                FetchMissingImagesCard.Header = LocalizationManager.Current.FetchMissingImagesLabel;
+                FetchMissingImagesCard.Description = LocalizationManager.Current.FetchMissingImagesCardDesc;
                 Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(ServerUrlInput, LocalizationManager.Current.ServerUrlLabel);
                 Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(UsernameInput, LocalizationManager.Current.UsernameLabel);
                 Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(PasswordInput, LocalizationManager.Current.ApiPasswordLabel);
@@ -272,6 +278,14 @@ namespace FreshRssClient.Views
                 {
                     _viewModel.ArticleFilter = selectedFilter;
                 }
+            }
+        }
+
+        private void OnFetchMissingImagesToggled(object sender, RoutedEventArgs e)
+        {
+            if (_viewModel != null && !_isUpdating && _viewModel.FetchMissingImagesFromWeb != FetchMissingImagesToggle.IsOn)
+            {
+                _viewModel.FetchMissingImagesFromWeb = FetchMissingImagesToggle.IsOn;
             }
         }
 
