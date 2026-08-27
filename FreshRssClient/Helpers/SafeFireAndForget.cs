@@ -27,28 +27,6 @@ namespace FreshRssClient.Helpers
             }
         }
 
-        public static async void Run(Task task, Action<Exception>? onError = null)
-        {
-            try
-            {
-                await task;
-            }
-            catch (OperationCanceledException)
-            {
-            }
-            catch (Exception ex)
-            {
-                if (onError != null)
-                {
-                    onError(ex);
-                }
-                else
-                {
-                    LogException(ex);
-                }
-            }
-        }
-
         private static void LogException(Exception ex)
         {
             try
