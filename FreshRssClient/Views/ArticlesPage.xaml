@@ -22,6 +22,76 @@
 
             <views:StringToImageSourceConverter x:Key="ImageConverter"/>
 
+            <Style x:Key="IconButtonStyle" TargetType="Button">
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="BorderBrush" Value="Transparent"/>
+                <Setter Property="BorderThickness" Value="0"/>
+                <Setter Property="CornerRadius" Value="{ThemeResource ControlCornerRadius}"/>
+                <Setter Property="Padding" Value="0"/>
+                <Setter Property="Foreground" Value="{ThemeResource ButtonForeground}"/>
+                <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                <Setter Property="UseSystemFocusVisuals" Value="True"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Grid>
+                                <Border x:Name="ButtonBackground"
+                                        Background="{TemplateBinding Background}"
+                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                        BorderThickness="{TemplateBinding BorderThickness}"
+                                        CornerRadius="{TemplateBinding CornerRadius}"/>
+                                <Border x:Name="PointerOverOverlay"
+                                        Background="{ThemeResource ButtonBackgroundPointerOver}"
+                                        CornerRadius="{TemplateBinding CornerRadius}"
+                                        Opacity="0"
+                                        IsHitTestVisible="False"/>
+                                <Border x:Name="PressedOverlay"
+                                        Background="{ThemeResource ButtonBackgroundPressed}"
+                                        CornerRadius="{TemplateBinding CornerRadius}"
+                                        Opacity="0"
+                                        IsHitTestVisible="False"/>
+                                <ContentPresenter Content="{TemplateBinding Content}"
+                                                  ContentTemplate="{TemplateBinding ContentTemplate}"
+                                                  Foreground="{TemplateBinding Foreground}"
+                                                  Padding="{TemplateBinding Padding}"
+                                                  HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                  VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                                  AutomationProperties.AccessibilityView="Raw"/>
+                                <VisualStateManager.VisualStateGroups>
+                                    <VisualStateGroup x:Name="CommonStates">
+                                        <VisualState x:Name="Normal">
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetName="PointerOverOverlay" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.083"/>
+                                                <DoubleAnimation Storyboard.TargetName="PressedOverlay" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.083"/>
+                                            </Storyboard>
+                                        </VisualState>
+                                        <VisualState x:Name="PointerOver">
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetName="PointerOverOverlay" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.083"/>
+                                                <DoubleAnimation Storyboard.TargetName="PressedOverlay" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.083"/>
+                                            </Storyboard>
+                                        </VisualState>
+                                        <VisualState x:Name="Pressed">
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetName="PointerOverOverlay" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.05"/>
+                                                <DoubleAnimation Storyboard.TargetName="PressedOverlay" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.05"/>
+                                            </Storyboard>
+                                        </VisualState>
+                                        <VisualState x:Name="Disabled">
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetName="PointerOverOverlay" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0"/>
+                                                <DoubleAnimation Storyboard.TargetName="PressedOverlay" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0"/>
+                                            </Storyboard>
+                                        </VisualState>
+                                    </VisualStateGroup>
+                                </VisualStateManager.VisualStateGroups>
+                            </Grid>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
             <!-- Card container: retemplated because ListViewItemPresenter ignores CornerRadius,
                  which left the state visuals square against the rounded card -->
             <Style x:Key="ArticleCardContainerStyle" TargetType="GridViewItem">
@@ -185,15 +255,15 @@
                         </StackPanel>
 
                         <Button Grid.Column="1" 
+                                Style="{StaticResource IconButtonStyle}"
                                 AutomationProperties.Name="{x:Bind Title, Mode=OneWay}"
                                 Command="{x:Bind MarkAsReadCommand, Mode=OneWay}"
                                 Visibility="{x:Bind MarkAsReadVisibility, Mode=OneWay}"
                                 Background="Transparent"
                                 BorderThickness="0"
                                 Padding="0"
-                                Width="40"
-                                Height="40"
-                                CornerRadius="12"
+                                Width="32"
+                                Height="32"
                                 VerticalAlignment="Center">
                             <FontIcon Glyph="&#xE8FB;" FontSize="12" FontFamily="Segoe Fluent Icons"/>
                         </Button>
@@ -267,14 +337,14 @@
                                   Opacity="0.85"/>
 
                         <Button Command="{x:Bind MarkAsReadCommand, Mode=OneWay}"
+                                Style="{StaticResource IconButtonStyle}"
                                 AutomationProperties.Name="{x:Bind Title, Mode=OneWay}"
                                 Visibility="{x:Bind MarkAsReadVisibility, Mode=OneWay}"
                                 Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                                 Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                Width="40"
-                                Height="40"
+                                Width="32"
+                                Height="32"
                                 Padding="0"
-                                CornerRadius="14"
                                 HorizontalAlignment="Right"
                                 VerticalAlignment="Top"
                                 Margin="8"
@@ -371,14 +441,14 @@
                            VerticalAlignment="Center"/>
 
                 <Button x:Name="FilterBtn" Grid.Column="1" 
+                        Style="{StaticResource IconButtonStyle}"
                         AutomationProperties.AutomationId="ArticlesFilterButton"
                         Background="Transparent" 
                         BorderThickness="0" 
                         VerticalAlignment="Center" 
-                        Width="40"
-                        Height="40"
+                        Width="32"
+                        Height="32"
                         Padding="0" 
-                        CornerRadius="16" 
                         Margin="0,0,6,0">
                     <FontIcon Glyph="&#xE71C;" FontSize="14" FontFamily="Segoe Fluent Icons"/>
                     <Button.Flyout>
@@ -391,42 +461,42 @@
                 </Button>
 
                 <Button x:Name="SelectAllBtn" Grid.Column="2"
+                        Style="{StaticResource IconButtonStyle}"
                         AutomationProperties.AutomationId="ArticlesSelectAllButton"
                         Background="Transparent"
                         BorderThickness="0"
                         VerticalAlignment="Center"
-                        Width="40"
-                        Height="40"
+                        Width="32"
+                        Height="32"
                         Padding="0"
-                        CornerRadius="16"
                         Margin="0,0,6,0"
                         Click="OnSelectAllClicked">
                     <FontIcon Glyph="&#xE762;" FontSize="14" FontFamily="Segoe Fluent Icons"/>
                 </Button>
 
                 <Button x:Name="LayoutBtn" Grid.Column="3" 
+                        Style="{StaticResource IconButtonStyle}"
                         AutomationProperties.AutomationId="ArticlesLayoutButton"
                         Background="Transparent" 
                         BorderThickness="0" 
                         VerticalAlignment="Center" 
-                        Width="40"
-                        Height="40"
+                        Width="32"
+                        Height="32"
                         Padding="0" 
-                        CornerRadius="16" 
                         Margin="0,0,6,0"
                         Click="OnLayoutClicked">
                     <FontIcon x:Name="LayoutBtnIcon" Glyph="&#xE80A;" FontSize="14" FontFamily="Segoe Fluent Icons"/>
                 </Button>
 
                 <Button x:Name="RefreshBtn" Grid.Column="4" 
+                        Style="{StaticResource IconButtonStyle}"
                         AutomationProperties.AutomationId="ArticlesRefreshButton"
                         Background="Transparent" 
                         BorderThickness="0" 
                         VerticalAlignment="Center" 
-                        Width="40"
-                        Height="40"
-                        Padding="0" 
-                        CornerRadius="16"
+                        Width="32"
+                        Height="32"
+                        Padding="0"
                         Margin="0,0,6,0">
                     <FontIcon Glyph="&#xE72C;" FontSize="14" FontFamily="Segoe Fluent Icons"/>
                 </Button>
