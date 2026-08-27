@@ -1,0 +1,52 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <inspection_tool class="HtmlUnknownTag" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="myValues">
+        <value>
+          <list size="23">
+            <item index="0" class="java.lang.String" itemvalue="nobr" />
+            <item index="1" class="java.lang.String" itemvalue="noembed" />
+            <item index="2" class="java.lang.String" itemvalue="comment" />
+            <item index="3" class="java.lang.String" itemvalue="noscript" />
+            <item index="4" class="java.lang.String" itemvalue="embed" />
+            <item index="5" class="java.lang.String" itemvalue="script" />
+            <item index="6" class="java.lang.String" itemvalue="md-icon" />
+            <item index="7" class="java.lang.String" itemvalue="md-checkbox" />
+            <item index="8" class="java.lang.String" itemvalue="md-dialog" />
+            <item index="9" class="java.lang.String" itemvalue="md-filled-text-field" />
+            <item index="10" class="java.lang.String" itemvalue="md-outlined-text-field" />
+            <item index="11" class="java.lang.String" itemvalue="mwc-snackbar" />
+            <item index="12" class="java.lang.String" itemvalue="top-app-bar" />
+            <item index="13" class="java.lang.String" itemvalue="md-list-item-icon" />
+            <item index="14" class="java.lang.String" itemvalue="md-fab" />
+            <item index="15" class="java.lang.String" itemvalue="md-fab-extended" />
+            <item index="16" class="java.lang.String" itemvalue="md-list-item" />
+            <item index="17" class="java.lang.String" itemvalue="md-list-item-link" />
+            <item index="18" class="java.lang.String" itemvalue="md-data-table-column" />
+            <item index="19" class="java.lang.String" itemvalue="md-data-table-cell" />
+            <item index="20" class="java.lang.String" itemvalue="md-branded-fab" />
+            <item index="21" class="java.lang.String" itemvalue="md-list" />
+            <item index="22" class="java.lang.String" itemvalue="nav-drawer" />
+          </list>
+        </value>
+      </option>
+      <option name="myCustomValuesEnabled" value="true" />
+    </inspection_tool>
+    <inspection_tool class="MethodShouldBeFinalInspection" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="NativeMemberUsageInspection" enabled="true" level="ERROR" enabled_by_default="true">
+      <option name="strictChecking" value="false" />
+    </inspection_tool>
+    <inspection_tool class="NullableTypeFormatInspection" enabled="true" level="WEAK WARNING" enabled_by_default="true">
+      <option name="nullableTypeFormat" value="SHORT" />
+    </inspection_tool>
+    <inspection_tool class="ParameterDefaultsNullInspection" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="PhpClassConstantAccessedViaChildClassInspection" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="PhpStanGlobal" enabled="true" level="WEAK WARNING" enabled_by_default="true" />
+    <inspection_tool class="PhpUndefinedFieldInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="NOTIFY_ACCESS_VIA_MAGIC_METHOD" value="false" />
+      <option name="NOTIFY_DYNAMIC_READ" value="false" />
+    </inspection_tool>
+    <inspection_tool class="StringCurlyInspection" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+  </profile>
+</component>
