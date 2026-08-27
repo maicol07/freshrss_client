@@ -43,7 +43,8 @@
                 </Grid.ColumnDefinitions>
 
                 <!-- Selection CheckBox -->
-                <CheckBox Grid.Row="0" Grid.Column="0" 
+                <CheckBox Grid.Row="0" Grid.Column="0"
+                          AutomationProperties.Name="{x:Bind Title, Mode=OneWay}"
                           IsChecked="{x:Bind IsSelected, Mode=TwoWay}"
                           MinWidth="0" MinHeight="0"
                           Width="24" Height="24"
@@ -74,13 +75,14 @@
                         </StackPanel>
 
                         <Button Grid.Column="1" 
+                                AutomationProperties.Name="{x:Bind Title, Mode=OneWay}"
                                 Command="{x:Bind MarkAsReadCommand, Mode=OneWay}"
                                 Visibility="{x:Bind MarkAsReadVisibility, Mode=OneWay}"
                                 Background="Transparent"
                                 BorderThickness="0"
                                 Padding="0"
-                                Width="24"
-                                Height="24"
+                                Width="40"
+                                Height="40"
                                 CornerRadius="12"
                                 VerticalAlignment="Center">
                             <FontIcon Glyph="&#xE8FB;" FontSize="12" FontFamily="Segoe Fluent Icons"/>
@@ -141,10 +143,11 @@
                     <!-- Image / Header Area -->
                     <Grid Grid.Row="0" Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}" CornerRadius="8,8,0,0">
                         <SymbolIcon Symbol="Document" Foreground="{ThemeResource TextFillColorTertiaryBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        <Image Source="{x:Bind ImageUrl, Converter={StaticResource ImageConverter}, Mode=OneWay}" Stretch="UniformToFill" Width="260" Height="120"/>
+                            <Image Source="{x:Bind ImageUrl, Converter={StaticResource ImageConverter}, Mode=OneWay}" Stretch="UniformToFill" Width="260" Height="120" AutomationProperties.AccessibilityView="Raw"/>
                         
                         <!-- Selection CheckBox -->
                         <CheckBox IsChecked="{x:Bind IsSelected, Mode=TwoWay}"
+                                  AutomationProperties.Name="{x:Bind Title, Mode=OneWay}"
                                   MinWidth="0" MinHeight="0"
                                   Width="24" Height="24"
                                   Padding="0"
@@ -154,11 +157,12 @@
                                   Opacity="0.85"/>
 
                         <Button Command="{x:Bind MarkAsReadCommand, Mode=OneWay}"
+                                AutomationProperties.Name="{x:Bind Title, Mode=OneWay}"
                                 Visibility="{x:Bind MarkAsReadVisibility, Mode=OneWay}"
                                 Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                                 Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                Width="28"
-                                Height="28"
+                                Width="40"
+                                Height="40"
                                 Padding="0"
                                 CornerRadius="14"
                                 HorizontalAlignment="Right"
@@ -217,7 +221,7 @@
         </DataTemplate>
     </Page.Resources>
 
-    <Grid x:Name="RootGrid" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+    <Grid x:Name="RootGrid" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" SizeChanged="OnRootGridSizeChanged">
         <Grid.ColumnDefinitions>
             <ColumnDefinition x:Name="LeftColumnDefinition" Width="350"/>
             <ColumnDefinition x:Name="RightColumnDefinition" Width="*"/>
@@ -256,11 +260,12 @@
                            VerticalAlignment="Center"/>
 
                 <Button x:Name="FilterBtn" Grid.Column="1" 
+                        AutomationProperties.AutomationId="ArticlesFilterButton"
                         Background="Transparent" 
                         BorderThickness="0" 
                         VerticalAlignment="Center" 
-                        Width="32" 
-                        Height="32" 
+                        Width="40"
+                        Height="40"
                         Padding="0" 
                         CornerRadius="16" 
                         Margin="0,0,6,0">
@@ -275,11 +280,12 @@
                 </Button>
 
                 <Button x:Name="SelectAllBtn" Grid.Column="2"
+                        AutomationProperties.AutomationId="ArticlesSelectAllButton"
                         Background="Transparent"
                         BorderThickness="0"
                         VerticalAlignment="Center"
-                        Width="32"
-                        Height="32"
+                        Width="40"
+                        Height="40"
                         Padding="0"
                         CornerRadius="16"
                         Margin="0,0,6,0"
@@ -288,11 +294,12 @@
                 </Button>
 
                 <Button x:Name="LayoutBtn" Grid.Column="3" 
+                        AutomationProperties.AutomationId="ArticlesLayoutButton"
                         Background="Transparent" 
                         BorderThickness="0" 
                         VerticalAlignment="Center" 
-                        Width="32" 
-                        Height="32" 
+                        Width="40"
+                        Height="40"
                         Padding="0" 
                         CornerRadius="16" 
                         Margin="0,0,6,0"
@@ -301,11 +308,12 @@
                 </Button>
 
                 <Button x:Name="RefreshBtn" Grid.Column="4" 
+                        AutomationProperties.AutomationId="ArticlesRefreshButton"
                         Background="Transparent" 
                         BorderThickness="0" 
                         VerticalAlignment="Center" 
-                        Width="32" 
-                        Height="32" 
+                        Width="40"
+                        Height="40"
                         Padding="0" 
                         CornerRadius="16"
                         Margin="0,0,6,0">
@@ -322,6 +330,7 @@
 
             <!-- ListView (Split Layout) -->
             <ListView x:Name="ArticlesListView" Grid.Row="2" 
+                      AutomationProperties.AutomationId="ArticlesList"
                       SelectionMode="Extended" 
                       Margin="0"
                       ItemTemplate="{StaticResource ArticleListTemplate}"
@@ -329,6 +338,7 @@
 
             <!-- GridView (Grid Layout) -->
             <GridView x:Name="ArticlesGridView" Grid.Row="2" 
+                      AutomationProperties.AutomationId="ArticlesGrid"
                       SelectionMode="Extended" 
                       Margin="12" 
                       Padding="0"
@@ -427,6 +437,7 @@
                 <!-- Action Buttons -->
                 <StackPanel Orientation="Horizontal" Spacing="12" Margin="0,12,0,0">
                     <Button x:Name="OpenBrowserButton" Click="OnOpenInBrowserClicked"
+                            AutomationProperties.AutomationId="OpenArticleInBrowserButton"
                             Background="{ThemeResource SystemAccentColorBrush}" 
                             Foreground="White"/>
                 </StackPanel>

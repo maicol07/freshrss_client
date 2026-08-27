@@ -22,6 +22,7 @@
                   PaneToggleRequested="OnTitleBarPaneToggleRequested">
             <TitleBar.Content>
                 <AutoSuggestBox x:Name="SearchBox" 
+                                AutomationProperties.AutomationId="ArticleSearchBox"
                                 Width="250"
                                 HorizontalAlignment="Left"
                                 VerticalAlignment="Center"

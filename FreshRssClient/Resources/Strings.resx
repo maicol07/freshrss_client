@@ -79,9 +79,6 @@
   <data name="UpdateIntervalLabel" xml:space="preserve">
     <value>Sync Interval (Minutes)</value>
   </data>
-  <data name="EnableOpenGraphLabel" xml:space="preserve">
-    <value>Enable OpenGraph (scrape rich article text &amp; images)</value>
-  </data>
   <data name="LanguageLabel" xml:space="preserve">
     <value>Language</value>
   </data>
@@ -230,9 +227,6 @@
   </data>
   <data name="ReadingExpanderDesc" xml:space="preserve">
     <value>Customize reading behavior and content fetching</value>
-  </data>
-  <data name="OpenGraphCardDesc" xml:space="preserve">
-    <value>Download cover images and full article text if not provided directly by feeds</value>
   </data>
   <data name="DefaultFilterCardHeader" xml:space="preserve">
     <value>Default filter</value>

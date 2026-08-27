@@ -20,11 +20,13 @@ namespace FreshRssClient.Views
     {
         private MainViewModel? _viewModel;
         private bool _isUpdatingSelection = false;
+        private bool _isSubscribed;
         private RssArticle? _contextArticle;
 
         public ArticlesPage()
         {
             this.InitializeComponent();
+            this.Loaded += OnLoaded;
             this.Unloaded += OnUnloaded;
 
             // Set grid view styling using a safe, standard style that preserves native Fluent templates
@@ -76,17 +78,22 @@ namespace FreshRssClient.Views
             UpdateFilterVisuals();
             UpdateLocalizations();
 
-            // Subscribe to VM PropertyChanged events
-            _viewModel.PropertyChanged += OnViewModelPropertyChanged;
-
-            // Subscribe to Articles collection changes to dynamically toggle empty state
-            _viewModel.Articles.CollectionChanged += OnArticlesCollectionChanged;
-
-            // Subscribe to language changes
-            LocalizationManager.LanguageChanged += OnLanguageChanged;
+            Subscribe();
 
             // Initial visual state application
             ApplyLayoutMode();
+        }
+
+        private void OnLoaded(object sender, RoutedEventArgs e) => Subscribe();
+
+        private void Subscribe()
+        {
+            if (_viewModel == null || _isSubscribed) return;
+
+            _viewModel.PropertyChanged += OnViewModelPropertyChanged;
+            _viewModel.Articles.CollectionChanged += OnArticlesCollectionChanged;
+            LocalizationManager.LanguageChanged += OnLanguageChanged;
+            _isSubscribed = true;
         }
 
         private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -153,7 +160,7 @@ namespace FreshRssClient.Views
                 _viewModel.Articles.CollectionChanged -= OnArticlesCollectionChanged;
             }
             LocalizationManager.LanguageChanged -= OnLanguageChanged;
-            this.Unloaded -= OnUnloaded;
+            _isSubscribed = false;
         }
 
         private void OnArticlesCollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
@@ -193,11 +200,17 @@ namespace FreshRssClient.Views
 
             ToolTipService.SetToolTip(RefreshBtn, LocalizationManager.Current.SyncNowButton);
             ToolTipService.SetToolTip(SelectAllBtn, LocalizationManager.Current.SelectAll);
+            Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(RefreshBtn, LocalizationManager.Current.SyncNowButton);
+            Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(SelectAllBtn, LocalizationManager.Current.SelectAll);
+            Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(FilterBtn, LocalizationManager.Current.FilterLabel);
             
             OpenBrowserButton.Content = LocalizationManager.Current.OpenInBrowser;
             
             MassMarkReadText.Text = LocalizationManager.Current.MassMarkAsRead;
             MassOpenText.Text = LocalizationManager.Current.MassOpen;
+            Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(MassMarkReadBtn, LocalizationManager.Current.MassMarkAsRead);
+            Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(MassOpenBtn, LocalizationManager.Current.MassOpen);
+            Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(OpenBrowserButton, LocalizationManager.Current.OpenInBrowser);
 
             EmptyStateHeader.Text = LocalizationManager.Current.NoArticles;
             EmptyStateSubtitle.Text = LocalizationManager.Current.NoArticlesSubtitle;
@@ -242,7 +255,7 @@ namespace FreshRssClient.Views
         {
             if (_viewModel == null) return;
 
-            bool useGrid = _viewModel.UseGridLayout;
+            bool useGrid = _viewModel.UseGridLayout || RootGrid.ActualWidth < 760;
 
             if (useGrid)
             {
@@ -303,10 +316,15 @@ namespace FreshRssClient.Views
             ToolTipService.SetToolTip(LayoutBtn, useGrid ? 
                 LocalizationManager.Current.ListViewTooltip :
                 LocalizationManager.Current.GridViewTooltip);
+            Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(
+                LayoutBtn,
+                useGrid ? LocalizationManager.Current.ListViewTooltip : LocalizationManager.Current.GridViewTooltip);
 
             // Toggle empty state / lists visibility
             UpdateEmptyState();
         }
+
+        private void OnRootGridSizeChanged(object sender, SizeChangedEventArgs e) => ApplyLayoutMode();
 
         private void UpdateMultiSelectMode()
         {
@@ -347,7 +365,7 @@ namespace FreshRssClient.Views
                     DetailTitle.Text = article.Title;
                     FeedMeta.Text = article.FeedTitle;
                     DateMeta.Text = article.PublishDate.ToString("f");
-                    BodyText.Text = article.Summary;
+                    BodyText.Text = string.IsNullOrWhiteSpace(article.Content) ? article.Summary : article.Content;
 
                     if (!string.IsNullOrEmpty(article.FeedIconUrl))
                     {
@@ -560,8 +578,10 @@ namespace FreshRssClient.Views
             {
                 try
                 {
-                    var uri = new Uri(_viewModel.SelectedArticle.Link);
-                    await Launcher.LaunchUriAsync(uri);
+                    if (WebUri.TryCreate(_viewModel.SelectedArticle.Link, out var uri))
+                    {
+                        await Launcher.LaunchUriAsync(uri);
+                    }
                 }
                 catch
                 {
@@ -703,8 +723,10 @@ namespace FreshRssClient.Views
 
             try
             {
-                var uri = new Uri(_contextArticle.Link);
-                await Launcher.LaunchUriAsync(uri);
+                if (WebUri.TryCreate(_contextArticle.Link, out var uri))
+                {
+                    await Launcher.LaunchUriAsync(uri);
+                }
                 
                 await _viewModel.MarkArticleAsReadAsync(_contextArticle);
             }

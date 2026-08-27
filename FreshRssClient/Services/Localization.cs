@@ -13,7 +13,6 @@ namespace FreshRssClient.Services
         string UsernameLabel { get; }
         string ApiPasswordLabel { get; }
         string UpdateIntervalLabel { get; }
-        string EnableOpenGraphLabel { get; }
         string LanguageLabel { get; }
         string SaveButton { get; }
         string SavedSuccess { get; }
@@ -65,7 +64,6 @@ namespace FreshRssClient.Services
         string MaxReadCardDesc { get; }
         string ReadingExpanderHeader { get; }
         string ReadingExpanderDesc { get; }
-        string OpenGraphCardDesc { get; }
         string DefaultFilterCardHeader { get; }
         string DefaultFilterCardDesc { get; }
         string OpenInBrowserCardDesc { get; }
@@ -115,7 +113,6 @@ namespace FreshRssClient.Services
         public string UsernameLabel => Get(nameof(UsernameLabel));
         public string ApiPasswordLabel => Get(nameof(ApiPasswordLabel));
         public string UpdateIntervalLabel => Get(nameof(UpdateIntervalLabel));
-        public string EnableOpenGraphLabel => Get(nameof(EnableOpenGraphLabel));
         public string LanguageLabel => Get(nameof(LanguageLabel));
         public string SaveButton => Get(nameof(SaveButton));
         public string SavedSuccess => Get(nameof(SavedSuccess));
@@ -167,7 +164,6 @@ namespace FreshRssClient.Services
         public string MaxReadCardDesc => Get(nameof(MaxReadCardDesc));
         public string ReadingExpanderHeader => Get(nameof(ReadingExpanderHeader));
         public string ReadingExpanderDesc => Get(nameof(ReadingExpanderDesc));
-        public string OpenGraphCardDesc => Get(nameof(OpenGraphCardDesc));
         public string DefaultFilterCardHeader => Get(nameof(DefaultFilterCardHeader));
         public string DefaultFilterCardDesc => Get(nameof(DefaultFilterCardDesc));
         public string OpenInBrowserCardDesc => Get(nameof(OpenInBrowserCardDesc));

@@ -9,6 +9,7 @@ using Microsoft.UI.Xaml.Navigation;
 using Microsoft.UI.Xaml.Shapes;
 using System.Threading.Tasks;
 using Windows.ApplicationModel.Activation;
+using FreshRssClient.Helpers;
 
 namespace FreshRssClient;
 
@@ -72,7 +73,7 @@ public partial class App : Application
     /// Invoked when the application is launched.
     /// </summary>
     /// <param name="args">Details about the launch request and process.</param>
-    protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
+    protected override async void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
     {
         try
         {
@@ -97,8 +98,7 @@ public partial class App : Application
 
             if (!thisInstance.IsCurrent)
             {
-                thisInstance.RedirectActivationToAsync(AppInstance.GetCurrent().GetActivatedEventArgs());
-                Environment.Exit(0);
+                await thisInstance.RedirectActivationToAsync(AppInstance.GetCurrent().GetActivatedEventArgs());
                 return;
             }
 
@@ -132,7 +132,7 @@ public partial class App : Application
         {
             if (e.Data is ToastNotificationActivatedEventArgs toastArgs)
             {
-                _mainWindow.ActivateFromToast(toastArgs.Argument);
+                SafeFireAndForget.Run(() => _mainWindow.ActivateFromToastAsync(toastArgs.Argument));
             }
             else
             {

@@ -8,7 +8,7 @@
     mc:Ignorable="d">
 
     <ScrollViewer x:Name="RootScrollViewer" Padding="24" HorizontalAlignment="Stretch" VerticalScrollBarVisibility="Auto">
-        <StackPanel Spacing="16" MaxWidth="1000" HorizontalAlignment="Left" Width="600">
+        <StackPanel Spacing="16" MaxWidth="720" HorizontalAlignment="Stretch">
             <!-- Header -->
             <TextBlock x:Name="SettingsTitle" 
                        FontSize="28" 
@@ -24,17 +24,17 @@
                 <labs:SettingsExpander.Items>
                     <!-- Server URL Card -->
                     <labs:SettingsCard x:Name="ServerUrlCard">
-                        <TextBox x:Name="ServerUrlInput" Width="300" PlaceholderText="https://example.com/api/greader.php" LostFocus="OnServerUrlLostFocus"/>
+                        <TextBox x:Name="ServerUrlInput" MaxWidth="360" HorizontalAlignment="Stretch" AutomationProperties.AutomationId="ServerUrlInput" PlaceholderText="https://example.com/api/greader.php" LostFocus="OnServerUrlLostFocus"/>
                     </labs:SettingsCard>
 
                     <!-- Username Card -->
                     <labs:SettingsCard x:Name="UsernameCard">
-                        <TextBox x:Name="UsernameInput" Width="300" LostFocus="OnUsernameLostFocus"/>
+                        <TextBox x:Name="UsernameInput" MaxWidth="360" HorizontalAlignment="Stretch" AutomationProperties.AutomationId="UsernameInput" LostFocus="OnUsernameLostFocus"/>
                     </labs:SettingsCard>
 
                     <!-- Password Card -->
                     <labs:SettingsCard x:Name="PasswordCard">
-                        <PasswordBox x:Name="PasswordInput" Width="300" LostFocus="OnPasswordLostFocus"/>
+                        <PasswordBox x:Name="PasswordInput" MaxWidth="360" HorizontalAlignment="Stretch" AutomationProperties.AutomationId="ApiPasswordInput" LostFocus="OnPasswordLostFocus"/>
                     </labs:SettingsCard>
                 </labs:SettingsExpander.Items>
             </labs:SettingsExpander>
@@ -77,11 +77,6 @@
                 </labs:SettingsExpander.HeaderIcon>
 
                 <labs:SettingsExpander.Items>
-                    <!-- OpenGraph Toggle -->
-                    <labs:SettingsCard x:Name="OpenGraphCard">
-                        <ToggleSwitch x:Name="OpenGraphToggle" Toggled="OnOpenGraphToggled"/>
-                    </labs:SettingsCard>
-
                     <!-- Default Filter ComboBox -->
                     <labs:SettingsCard x:Name="DefaultFilterCard">
                         <ComboBox x:Name="DefaultFilterComboBox" Width="150" SelectionChanged="OnDefaultFilterSelectionChanged"/>

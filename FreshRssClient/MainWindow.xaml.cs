@@ -139,9 +139,11 @@ namespace FreshRssClient
         private void ConfigureSearch()
         {
             SearchBox.PlaceholderText = LocalizationManager.Current.SearchPlaceholder;
+            Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(SearchBox, LocalizationManager.Current.SearchPlaceholder);
             LocalizationManager.LanguageChanged += (sender, args) =>
             {
                 SearchBox.PlaceholderText = LocalizationManager.Current.SearchPlaceholder;
+                Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(SearchBox, LocalizationManager.Current.SearchPlaceholder);
             };
 
             SearchBox.TextChanged += (sender, args) =>
@@ -207,7 +209,7 @@ namespace FreshRssClient
                 if (selectedItem != null)
                 {
                     if (selectedItem.Tag as string == "all_articles")
-                        _viewModel.SelectAllArticles();
+                        SafeFireAndForget.Run(() => _viewModel.SelectAllArticlesAsync());
                     else if (selectedItem.Tag is RssCategory category)
                         _viewModel.SelectCategory(category);
                     else if (selectedItem.Tag is RssFeed feed)
@@ -355,14 +357,14 @@ namespace FreshRssClient
             _trayIconHelper.RestoreFromTray();
         }
 
-        public void ActivateFromToast(string argument)
+        public async Task ActivateFromToastAsync(string argument)
         {
             _trayIconHelper.RestoreFromTray();
 
             if (argument.StartsWith("articleId="))
             {
                 var articleId = argument.Substring("articleId=".Length);
-                _viewModel.SelectAllArticles();
+                await _viewModel.SelectAllArticlesAsync();
                 _viewModel.SelectArticleById(articleId);
             }
         }

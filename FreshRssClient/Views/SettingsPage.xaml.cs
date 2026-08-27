@@ -37,7 +37,6 @@ namespace FreshRssClient.Views
                 IntervalNumberBox.Value = _viewModel.SyncInterval;
                 MaxReadNumberBox.Value = _viewModel.MaxReadArticles;
 
-                OpenGraphToggle.IsOn = _viewModel.EnableOpenGraph;
                 OpenInBrowserToggle.IsOn = _viewModel.OpenLinksInBrowser;
 
                 AutoStartToggle.IsOn = _viewModel.AutoStartWithWindows;
@@ -101,9 +100,6 @@ namespace FreshRssClient.Views
                             break;
                         case nameof(MainViewModel.MaxReadArticles):
                             MaxReadNumberBox.Value = _viewModel.MaxReadArticles;
-                            break;
-                        case nameof(MainViewModel.EnableOpenGraph):
-                            OpenGraphToggle.IsOn = _viewModel.EnableOpenGraph;
                             break;
                         case nameof(MainViewModel.OpenLinksInBrowser):
                             OpenInBrowserToggle.IsOn = _viewModel.OpenLinksInBrowser;
@@ -182,9 +178,6 @@ namespace FreshRssClient.Views
                 ReadingExpander.Header = LocalizationManager.Current.ReadingExpanderHeader;
                 ReadingExpander.Description = LocalizationManager.Current.ReadingExpanderDesc;
 
-                OpenGraphCard.Header = LocalizationManager.Current.EnableOpenGraphLabel;
-                OpenGraphCard.Description = LocalizationManager.Current.OpenGraphCardDesc;
-
                 DefaultFilterCard.Header = LocalizationManager.Current.DefaultFilterCardHeader;
                 DefaultFilterCard.Description = LocalizationManager.Current.DefaultFilterCardDesc;
 
@@ -197,6 +190,9 @@ namespace FreshRssClient.Views
 
                 OpenInBrowserCard.Header = LocalizationManager.Current.OpenLinksInBrowserLabel;
                 OpenInBrowserCard.Description = LocalizationManager.Current.OpenInBrowserCardDesc;
+                Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(ServerUrlInput, LocalizationManager.Current.ServerUrlLabel);
+                Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(UsernameInput, LocalizationManager.Current.UsernameLabel);
+                Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(PasswordInput, LocalizationManager.Current.ApiPasswordLabel);
 
                 // System Expander
                 SystemExpander.Header = LocalizationManager.Current.SystemExpanderHeader;
@@ -263,14 +259,6 @@ namespace FreshRssClient.Views
                 {
                     _viewModel.MaxReadArticles = val;
                 }
-            }
-        }
-
-        private void OnOpenGraphToggled(object sender, RoutedEventArgs e)
-        {
-            if (_viewModel != null && !_isUpdating && _viewModel.EnableOpenGraph != OpenGraphToggle.IsOn)
-            {
-                _viewModel.EnableOpenGraph = OpenGraphToggle.IsOn;
             }
         }
 
