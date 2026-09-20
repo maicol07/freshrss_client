@@ -1,5 +1,11 @@
 using System;
+using System.IO;
+using System.Net.Http;
 using System.Security;
+using System.Security.Cryptography;
+using System.Text;
+using System.Threading.Tasks;
+using FreshRssClient.Helpers;
 using Windows.Data.Xml.Dom;
 using Windows.UI.Notifications;
 
@@ -15,40 +21,78 @@ namespace FreshRssClient.Services
     public class NotificationService : INotificationService
     {
         private const string AppUserModelId = "Maicol.FreshRssClient.App";
+        private const string NotificationGroupName = "FreshRssNotifications";
+
+        private static readonly HttpClient ImageDownloadClient = new(new HttpClientHandler
+        {
+            AllowAutoRedirect = true,
+            MaxAutomaticRedirections = 3,
+            AutomaticDecompression = System.Net.DecompressionMethods.All
+        })
+        {
+            Timeout = TimeSpan.FromSeconds(4)
+        };
+
+        static NotificationService()
+        {
+            ImageDownloadClient.DefaultRequestHeaders.UserAgent.ParseAdd(
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 FreshRssClient/1.0");
+        }
 
         public void SendArticleNotification(string articleId, string feedTitle, string articleTitle, string? imageUrl)
         {
-            try
+            if (!string.IsNullOrEmpty(imageUrl) &&
+                Uri.TryCreate(imageUrl, UriKind.Absolute, out var uri) &&
+                (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps))
             {
-                // Escape text for safety in XML
-                var titleEscaped = SecurityElement.Escape(string.Format(LocalizationManager.Current.NewArticleNotificationTitle, feedTitle));
-                var bodyEscaped = SecurityElement.Escape(articleTitle);
-
-                string imageNode = string.Empty;
-                if (!string.IsNullOrEmpty(imageUrl) && Uri.TryCreate(imageUrl, UriKind.Absolute, out _))
+                SafeFireAndForget.Run(async () =>
                 {
-                    // Escape image URL
-                    var imageEscaped = SecurityElement.Escape(imageUrl);
-                    imageNode = $"<image placement='thumbnail' src='{imageEscaped}'/>";
-                }
+                    var effectiveImageUrl = await EnsureLocalImageAsync(imageUrl).ConfigureAwait(false);
+                    ShowToast(articleId, feedTitle, articleTitle, effectiveImageUrl);
+                });
+            }
+            else
+            {
+                ShowToast(articleId, feedTitle, articleTitle, imageUrl);
+            }
+        }
 
-                var toastXmlString = $@"
+        public static string BuildToastXml(string articleId, string feedTitle, string articleTitle, string? imageUrl)
+        {
+            var titleEscaped = SecurityElement.Escape(string.Format(LocalizationManager.Current.NewArticleNotificationTitle, feedTitle));
+            var bodyEscaped = SecurityElement.Escape(articleTitle);
+
+            string imageNode = string.Empty;
+            if (!string.IsNullOrEmpty(imageUrl) && Uri.TryCreate(imageUrl, UriKind.Absolute, out _))
+            {
+                var imageEscaped = SecurityElement.Escape(imageUrl);
+                imageNode = $"<image placement='hero' src='{imageEscaped}'/>";
+            }
+
+            return $@"
                 <toast launch='articleId={SecurityElement.Escape(articleId)}'>
                     <visual>
                         <binding template='ToastGeneric'>
+                            {imageNode}
                             <text>{titleEscaped}</text>
                             <text>{bodyEscaped}</text>
-                            {imageNode}
                         </binding>
                     </visual>
                 </toast>";
+        }
+
+        private void ShowToast(string articleId, string feedTitle, string articleTitle, string? imageUrl)
+        {
+            try
+            {
+                var toastXmlString = BuildToastXml(articleId, feedTitle, articleTitle, imageUrl);
 
                 var xmlDoc = new XmlDocument();
                 xmlDoc.LoadXml(toastXmlString);
                 var toast = new ToastNotification(xmlDoc)
                 {
                     Tag = articleId,
-                    Group = "FreshRssNotifications"
+                    Group = NotificationGroupName
                 };
 
                 var effectiveAumid = GetEffectiveAppUserModelId();
@@ -70,6 +114,88 @@ namespace FreshRssClient.Services
             {
                 // Silence notification errors to ensure background sync is never interrupted
             }
+        }
+
+        private static async Task<string?> EnsureLocalImageAsync(string? imageUrl)
+        {
+            if (string.IsNullOrEmpty(imageUrl) || !Uri.TryCreate(imageUrl, UriKind.Absolute, out var uri))
+            {
+                return null;
+            }
+
+            if (uri.IsFile)
+            {
+                return uri.AbsoluteUri;
+            }
+
+            if (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps)
+            {
+                return uri.AbsoluteUri;
+            }
+
+            try
+            {
+                var folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "FreshRssClient", "NotificationImages");
+                Directory.CreateDirectory(folder);
+                TryCleanOldCache(folder);
+
+                using var sha = SHA256.Create();
+                var hashBytes = sha.ComputeHash(Encoding.UTF8.GetBytes(imageUrl));
+                var hashStr = Convert.ToHexString(hashBytes).ToLowerInvariant();
+
+                var ext = Path.GetExtension(uri.AbsolutePath);
+                if (string.IsNullOrEmpty(ext) || ext.Length > 5)
+                {
+                    ext = ".jpg";
+                }
+
+                var localFilePath = Path.Combine(folder, $"{hashStr}{ext}");
+                if (File.Exists(localFilePath) && new FileInfo(localFilePath).Length > 0)
+                {
+                    return new Uri(localFilePath).AbsoluteUri;
+                }
+
+                var response = await ImageDownloadClient.GetAsync(uri).ConfigureAwait(false);
+                if (response.IsSuccessStatusCode)
+                {
+                    var bytes = await response.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
+                    if (bytes.Length > 0 && bytes.Length <= 3 * 1024 * 1024)
+                    {
+                        await File.WriteAllBytesAsync(localFilePath, bytes).ConfigureAwait(false);
+                        return new Uri(localFilePath).AbsoluteUri;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[NotificationService] Image download failed: {ex.Message}");
+            }
+
+            // Fallback to original URL if local download failed
+            return imageUrl;
+        }
+
+        private static void TryCleanOldCache(string cacheDir)
+        {
+            try
+            {
+                var dir = new DirectoryInfo(cacheDir);
+                if (!dir.Exists) return;
+
+                var files = dir.GetFiles();
+                if (files.Length > 50)
+                {
+                    var threshold = DateTime.UtcNow.AddDays(-7);
+                    foreach (var file in files)
+                    {
+                        if (file.LastWriteTimeUtc < threshold)
+                        {
+                            try { file.Delete(); } catch { }
+                        }
+                    }
+                }
+            }
+            catch { }
         }
 
         public void DismissNotification(string articleId)

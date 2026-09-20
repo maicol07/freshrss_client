@@ -49,5 +49,49 @@ namespace FreshRssClient.Tests
             // 3. Negative count (should clear the badge)
             notificationService.UpdateBadge(-5);
         }
+
+        [Test]
+        public async Task TestNotificationService_BuildToastXml_WithImageUrl_IncludesHeroImage()
+        {
+            LocalizationManager.SetLanguage("en");
+            var xml = NotificationService.BuildToastXml("art1", "Tech", "Big News", "https://example.com/banner.jpg");
+
+            await Assert.That(xml).Contains("<image placement='hero' src='https://example.com/banner.jpg'/>");
+            await Assert.That(xml).Contains("launch='articleId=art1'");
+            await Assert.That(xml).Contains("<text>New article from Tech</text>");
+            await Assert.That(xml).Contains("<text>Big News</text>");
+
+            // Verify XML is well-formed
+            var doc = System.Xml.Linq.XDocument.Parse(xml);
+            await Assert.That(doc.Root).IsNotNull();
+        }
+
+        [Test]
+        public async Task TestNotificationService_BuildToastXml_WithoutImageUrl_OmitsImageNode()
+        {
+            LocalizationManager.SetLanguage("en");
+            var xml = NotificationService.BuildToastXml("art2", "Tech", "Text Only", null);
+
+            await Assert.That(xml).DoesNotContain("<image");
+            await Assert.That(xml).Contains("<text>Text Only</text>");
+
+            var doc = System.Xml.Linq.XDocument.Parse(xml);
+            await Assert.That(doc.Root).IsNotNull();
+        }
+
+        [Test]
+        public async Task TestNotificationService_BuildToastXml_EscapesSpecialCharacters()
+        {
+            LocalizationManager.SetLanguage("en");
+            var xml = NotificationService.BuildToastXml("art&3", "Tech & Co <Review>", "Quotes \"and\" 'apostrophes'", "https://example.com/image?a=1&b=2");
+
+            await Assert.That(xml).Contains("launch='articleId=art&amp;3'");
+            await Assert.That(xml).Contains("Tech &amp; Co &lt;Review&gt;");
+            await Assert.That(xml).Contains("Quotes &quot;and&quot; &apos;apostrophes&apos;");
+            await Assert.That(xml).Contains("src='https://example.com/image?a=1&amp;b=2'");
+
+            var doc = System.Xml.Linq.XDocument.Parse(xml);
+            await Assert.That(doc.Root).IsNotNull();
+        }
     }
 }

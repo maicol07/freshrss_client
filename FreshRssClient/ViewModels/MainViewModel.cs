@@ -885,6 +885,39 @@ namespace FreshRssClient.ViewModels
             ApplyKnownImages(fetchedArticles);
             ApplyKnownImages(notificationArticles);
 
+            // If missing image resolution from web is active, quickly resolve images for new unread articles that need notification
+            if (!isFirstLoad && FetchMissingImagesFromWeb)
+            {
+                var newArticlesNeedingImages = notificationArticles
+                    .Where(a => !a.IsRead && !_sentNotificationIds.Contains(a.Id) && string.IsNullOrEmpty(a.ImageUrl) && !string.IsNullOrEmpty(a.Link))
+                    .Take(5)
+                    .ToList();
+
+                if (newArticlesNeedingImages.Count > 0)
+                {
+                    using var resolveCts = CancellationTokenSource.CreateLinkedTokenSource(token);
+                    resolveCts.CancelAfter(TimeSpan.FromSeconds(3));
+                    await Task.WhenAll(newArticlesNeedingImages.Select(async article =>
+                    {
+                        try
+                        {
+                            var resolvedUrl = await _articleImageResolver.ResolveAsync(article.Link, resolveCts.Token).ConfigureAwait(false);
+                            if (!string.IsNullOrEmpty(resolvedUrl))
+                            {
+                                article.ImageUrl = resolvedUrl;
+                                _knownImagesByArticleId[article.Id] = resolvedUrl;
+                                var matchingFetched = fetchedArticles.FirstOrDefault(f => f.Id == article.Id);
+                                if (matchingFetched != null)
+                                {
+                                    matchingFetched.ImageUrl = resolvedUrl;
+                                }
+                            }
+                        }
+                        catch { }
+                    })).ConfigureAwait(false);
+                }
+            }
+
             foreach (var article in fetchedArticles)
             {
                 AttachCommands(article);
