@@ -57,6 +57,9 @@ public partial class App : Application
     [System.Runtime.InteropServices.DllImport("shell32.dll", PreserveSig = false)]
     private static extern void SetCurrentProcessExplicitAppUserModelID([System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.LPWStr)] string AppID);
 
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern bool AllowSetForegroundWindow(uint dwProcessId);
+
     private static bool IsPackaged()
     {
         try
@@ -77,6 +80,8 @@ public partial class App : Application
     {
         try
         {
+            DebugLog.Write("App", $"OnLaunched started. IsPackaged: {IsPackaged()}, ProcessId: {Environment.ProcessId}");
+
             try
             {
                 if (IsPackaged())
@@ -98,16 +103,22 @@ public partial class App : Application
 
             if (!thisInstance.IsCurrent)
             {
-                await thisInstance.RedirectActivationToAsync(AppInstance.GetCurrent().GetActivatedEventArgs());
+                DebugLog.Write("App", $"Redirecting activation to process {thisInstance.ProcessId} from current {Environment.ProcessId}");
+                AllowSetForegroundWindow((uint)thisInstance.ProcessId);
+                var activatedArgs = AppInstance.GetCurrent().GetActivatedEventArgs();
+                await thisInstance.RedirectActivationToAsync(activatedArgs);
+                await Task.Delay(250);
+                Environment.Exit(0);
                 return;
             }
 
             thisInstance.Activated += OnAppInstanceActivated;
 
             _mainWindow = new MainWindow();
-            if (!_mainWindow.ShouldStartMinimized)
+            _mainWindow.Activate();
+            if (_mainWindow.ShouldStartMinimized)
             {
-                _mainWindow.Activate();
+                _mainWindow.AppWindow.Hide();
             }
         }
         catch (Exception ex)
@@ -126,16 +137,25 @@ public partial class App : Application
 
     private void OnAppInstanceActivated(object? sender, AppActivationArguments e)
     {
+        DebugLog.Write("App", "OnAppInstanceActivated triggered in main process");
         if (_mainWindow == null) return;
 
         _mainWindow.DispatcherQueue.TryEnqueue(() =>
         {
-            if (e.Data is ToastNotificationActivatedEventArgs toastArgs)
+            try
             {
-                SafeFireAndForget.Run(() => _mainWindow.ActivateFromToastAsync(toastArgs.Argument));
+                if (e.Data is ToastNotificationActivatedEventArgs toastArgs)
+                {
+                    SafeFireAndForget.Run(() => _mainWindow.ActivateFromToastAsync(toastArgs.Argument));
+                }
+                else
+                {
+                    _mainWindow.ActivateFromExternal();
+                }
             }
-            else
+            catch (Exception ex)
             {
+                WriteCrashLog("OnAppInstanceActivated", ex);
                 _mainWindow.ActivateFromExternal();
             }
         });

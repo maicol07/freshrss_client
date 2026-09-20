@@ -74,10 +74,12 @@ namespace FreshRssClient.Helpers
         private const uint NIF_ICON = 2;
         private const uint NIF_TIP = 4;
 
+        private const int SW_SHOWNORMAL = 1;
         private const int SW_RESTORE = 9;
         private const int SW_MINIMIZE = 6;
         private const int SW_HIDE = 0;
 
+        private const uint WM_LBUTTONUP = 0x0202;
         private const uint WM_LBUTTONDBLCLK = 0x0203;
         private const uint WM_RBUTTONUP = 0x0205;
         private const uint WM_COMMAND = 0x0111;
@@ -197,14 +199,49 @@ namespace FreshRssClient.Helpers
 
         public void MinimizeToTray()
         {
+            DebugLog.Write("Tray", "MinimizeToTray invoked");
+
             ShowWindow(_hwnd, SW_HIDE);
+            _window.AppWindow.Hide();
         }
 
         public void RestoreFromTray()
         {
+            DebugLog.Write("Tray", "RestoreFromTray invoked");
+
+            if (_window.AppWindow.Position.X <= -9000 || _window.AppWindow.Position.Y <= -9000)
+            {
+                try
+                {
+                    var displayArea = Microsoft.UI.Windowing.DisplayArea.GetFromWindowId(_window.AppWindow.Id, Microsoft.UI.Windowing.DisplayAreaFallback.Primary);
+                    if (displayArea != null)
+                    {
+                        var width = _window.AppWindow.Size.Width > 100 ? _window.AppWindow.Size.Width : 1200;
+                        var height = _window.AppWindow.Size.Height > 100 ? _window.AppWindow.Size.Height : 800;
+                        var centeredX = displayArea.WorkArea.X + (displayArea.WorkArea.Width - width) / 2;
+                        var centeredY = displayArea.WorkArea.Y + (displayArea.WorkArea.Height - height) / 2;
+                        _window.AppWindow.Move(new Windows.Graphics.PointInt32(centeredX, centeredY));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    DebugLog.Write("Tray", $"Restore position calculation failed: {ex.Message}");
+                }
+            }
+
+            _window.AppWindow.Show();
+            if (_window.AppWindow.Presenter is Microsoft.UI.Windowing.OverlappedPresenter presenter)
+            {
+                if (presenter.State == Microsoft.UI.Windowing.OverlappedPresenterState.Minimized)
+                {
+                    presenter.Restore();
+                }
+            }
+
             _window.Activate();
-            ShowWindow(_hwnd, SW_RESTORE);
+            ShowWindow(_hwnd, SW_SHOWNORMAL);
             SetForegroundWindow(_hwnd);
+            DebugLog.Write("Tray", "RestoreFromTray completed");
         }
 
         // Brand palette, kept in sync with tools/generate-icons.ps1.
@@ -345,7 +382,7 @@ namespace FreshRssClient.Helpers
             {
                 uint eventId = (uint)lParam.ToInt64();
 
-                if (eventId == WM_LBUTTONDBLCLK)
+                if (eventId == WM_LBUTTONUP || eventId == WM_LBUTTONDBLCLK)
                 {
                     RestoreFromTray();
                     return IntPtr.Zero;

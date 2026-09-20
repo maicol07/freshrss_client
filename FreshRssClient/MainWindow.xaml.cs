@@ -29,6 +29,7 @@ namespace FreshRssClient
         public MainWindow()
         {
             this.InitializeComponent();
+            this.Title = "FreshRSS Client";
 
             try
             {
@@ -78,6 +79,7 @@ namespace FreshRssClient
 
                 if (ShouldStartMinimized)
                 {
+                    AppWindow.Move(new Windows.Graphics.PointInt32(-10000, -10000));
                     _trayIconHelper.MinimizeToTray();
                 }
 
