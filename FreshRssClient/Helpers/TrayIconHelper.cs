@@ -16,6 +16,8 @@ namespace FreshRssClient.Helpers
         private bool _isCreated = false;
         private int _lastUnreadCount = 0;
         private Icon? _currentIcon = null;
+        private Microsoft.UI.Xaml.Media.SystemBackdrop? _hiddenBackdrop;
+        private volatile bool _isHidden;
         private readonly SubclassProc _subclassProc;
         private readonly Action _onSyncNow;
 
@@ -62,6 +64,27 @@ namespace FreshRssClient.Helpers
 
         [DllImport("user32.dll")]
         private static extern bool DestroyMenu(IntPtr hMenu);
+
+        [DllImport("kernel32.dll")]
+        private static extern IntPtr GetCurrentProcess();
+
+        [DllImport("kernel32.dll")]
+        private static extern bool SetProcessInformation(IntPtr hProcess, int processInformationClass, ref PROCESS_POWER_THROTTLING_STATE processInformation, uint processInformationSize);
+
+        [DllImport("kernel32.dll")]
+        private static extern bool SetProcessWorkingSetSize(IntPtr hProcess, nint dwMinimumWorkingSetSize, nint dwMaximumWorkingSetSize);
+
+        private const int ProcessPowerThrottling = 4;
+        private const uint PROCESS_POWER_THROTTLING_CURRENT_VERSION = 1;
+        private const uint PROCESS_POWER_THROTTLING_EXECUTION_SPEED = 1;
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct PROCESS_POWER_THROTTLING_STATE
+        {
+            public uint Version;
+            public uint ControlMask;
+            public uint StateMask;
+        }
 
         // Win32 Delegates
         private delegate IntPtr SubclassProc(IntPtr hWnd, uint uMsg, IntPtr wParam, IntPtr lParam, uint uIdSubclass, IntPtr dwRefData);
@@ -203,11 +226,73 @@ namespace FreshRssClient.Helpers
 
             ShowWindow(_hwnd, SW_HIDE);
             _window.AppWindow.Hide();
+            EnterEfficiencyMode();
+        }
+
+        // Same effect as Task Manager's "Efficiency mode": EcoQoS plus idle priority. The
+        // backdrop is dropped too, since Mica keeps a composition surface alive while hidden.
+        private void EnterEfficiencyMode()
+        {
+            if (_window.SystemBackdrop != null)
+            {
+                _hiddenBackdrop = _window.SystemBackdrop;
+                _window.SystemBackdrop = null;
+            }
+
+            SetPowerThrottling(PROCESS_POWER_THROTTLING_EXECUTION_SPEED);
+            using (var self = System.Diagnostics.Process.GetCurrentProcess()) self.PriorityClass = System.Diagnostics.ProcessPriorityClass.Idle;
+
+            _isHidden = true;
+            TrimMemory();
+        }
+
+        /// <summary>
+        /// Releases memory grown by background work (e.g. a sync) while the window sits in the tray.
+        /// Safe to call from any thread.
+        /// </summary>
+        public void TrimMemoryIfHidden()
+        {
+            if (_isHidden) TrimMemory();
+        }
+
+        private static void TrimMemory()
+        {
+            System.Runtime.GCSettings.LargeObjectHeapCompactionMode = System.Runtime.GCLargeObjectHeapCompactionMode.CompactOnce;
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            SetProcessWorkingSetSize(GetCurrentProcess(), -1, -1);
+        }
+
+        private void ExitEfficiencyMode()
+        {
+            _isHidden = false;
+
+            // ControlMask 0 hands throttling decisions back to the OS instead of forcing it off.
+            SetPowerThrottling(0);
+            using (var self = System.Diagnostics.Process.GetCurrentProcess()) self.PriorityClass = System.Diagnostics.ProcessPriorityClass.Normal;
+
+            if (_hiddenBackdrop != null)
+            {
+                _window.SystemBackdrop = _hiddenBackdrop;
+                _hiddenBackdrop = null;
+            }
+        }
+
+        private static void SetPowerThrottling(uint mask)
+        {
+            var state = new PROCESS_POWER_THROTTLING_STATE
+            {
+                Version = PROCESS_POWER_THROTTLING_CURRENT_VERSION,
+                ControlMask = mask,
+                StateMask = mask
+            };
+            SetProcessInformation(GetCurrentProcess(), ProcessPowerThrottling, ref state, (uint)Marshal.SizeOf<PROCESS_POWER_THROTTLING_STATE>());
         }
 
         public void RestoreFromTray()
         {
             DebugLog.Write("Tray", "RestoreFromTray invoked");
+            ExitEfficiencyMode();
 
             if (_window.AppWindow.Position.X <= -9000 || _window.AppWindow.Position.Y <= -9000)
             {

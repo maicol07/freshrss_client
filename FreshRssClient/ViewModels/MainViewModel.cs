@@ -1030,6 +1030,7 @@ namespace FreshRssClient.ViewModels
                 SyncStatusText = LocalizationManager.Current.SyncSuccess;
 
                 StartImageEnrichment();
+                _trayIconHelper?.TrimMemoryIfHidden();
             });
         }
 
@@ -1118,6 +1119,8 @@ namespace FreshRssClient.ViewModels
             {
                 _localStore.UpdateArticleImagesInCache(resolvedImages);
             }
+
+            _trayIconHelper?.TrimMemoryIfHidden();
         }
 
         /// <summary>
