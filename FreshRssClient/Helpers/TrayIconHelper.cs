@@ -17,6 +17,7 @@ namespace FreshRssClient.Helpers
         private int _lastUnreadCount = 0;
         private Icon? _currentIcon = null;
         private Microsoft.UI.Xaml.Media.SystemBackdrop? _hiddenBackdrop;
+        private UIElement? _hiddenContent;
         private volatile bool _isHidden;
         private readonly SubclassProc _subclassProc;
         private readonly Action _onSyncNow;
@@ -239,6 +240,14 @@ namespace FreshRssClient.Helpers
                 _window.SystemBackdrop = null;
             }
 
+            // Detaching the visual tree releases its composition surfaces and decoded images (VRAM);
+            // the elements themselves stay alive and are re-attached on restore.
+            if (_window.Content != null)
+            {
+                _hiddenContent = _window.Content;
+                _window.Content = null;
+            }
+
             SetPowerThrottling(PROCESS_POWER_THROTTLING_EXECUTION_SPEED);
             using (var self = System.Diagnostics.Process.GetCurrentProcess()) self.PriorityClass = System.Diagnostics.ProcessPriorityClass.Idle;
 
@@ -270,6 +279,12 @@ namespace FreshRssClient.Helpers
             // ControlMask 0 hands throttling decisions back to the OS instead of forcing it off.
             SetPowerThrottling(0);
             using (var self = System.Diagnostics.Process.GetCurrentProcess()) self.PriorityClass = System.Diagnostics.ProcessPriorityClass.Normal;
+
+            if (_hiddenContent != null)
+            {
+                _window.Content = _hiddenContent;
+                _hiddenContent = null;
+            }
 
             if (_hiddenBackdrop != null)
             {
