@@ -1,10 +1,11 @@
-name: Build and Upload Artifact
+name: Build and Upload Packages
 
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 jobs:
   build:
@@ -26,10 +27,73 @@ jobs:
         run: dotnet test FreshRssClient.Tests/FreshRssClient.Tests.csproj -c Debug -p:Platform=x64
 
       - name: Publish (win-x64)
-        run: dotnet publish FreshRssClient -c Release -r win-x64 --self-contained -o publish/win-x64
+        run: >-
+          dotnet publish FreshRssClient -c Release -p:Platform=x64 -r win-x64
+          --self-contained -p:WindowsPackageType=None -p:WindowsAppSDKSelfContained=true
+          -o publish/win-x64
+
+      - name: Build EXE installer
+        shell: pwsh
+        run: |
+          [xml]$manifest = Get-Content FreshRssClient/Package.appxmanifest
+          $version = $manifest.Package.Identity.Version
+          & "${env:ProgramFiles(x86)}/Inno Setup 6/ISCC.exe" "/DAppVersion=$version" tools/installer.iss
+          if ($LASTEXITCODE -ne 0) { throw 'EXE installer compilation failed.' }
+
+      - name: Build MSIX (unsigned)
+        run: >-
+          dotnet msbuild FreshRssClient/FreshRssClient.csproj -restore -t:Rebuild
+          -p:Configuration=Release -p:Platform=x64 -p:RuntimeIdentifier=win-x64
+          -p:SelfContained=true -p:WindowsAppSDKSelfContained=true
+          -p:GenerateAppxPackageOnBuild=true -p:AppxPackageSigningEnabled=false
+          -p:AppxBundle=Never -p:UapAppxPackageBuildMode=SideloadOnly
+          -p:AppxPackageDir="${{ github.workspace }}/publish/msix/"
+
+      - name: Verify packages and icons
+        shell: pwsh
+        run: |
+          $assets = Get-ChildItem FreshRssClient/Assets -File
+          foreach ($asset in $assets) {
+            if (!(Test-Path "publish/win-x64/Assets/$($asset.Name)")) {
+              throw "Published asset missing: $($asset.Name)"
+            }
+          }
+          $payload = @('FreshRssClient.exe', 'coreclr.dll', 'Microsoft.ui.xaml.dll')
+          foreach ($file in $payload + 'FreshRssClient.pri') {
+            if (!(Test-Path "publish/win-x64/$file")) { throw "Published file missing: $file" }
+          }
+          $msix = @(Get-ChildItem publish/msix -Recurse -Filter *.msix)
+          if ($msix.Count -ne 1) { throw 'Expected one MSIX package.' }
+          $archive = [System.IO.Compression.ZipFile]::OpenRead($msix[0].FullName)
+          try {
+            foreach ($file in $payload + 'resources.pri') {
+              if (!$archive.GetEntry($file)) { throw "MSIX file missing: $file" }
+            }
+            foreach ($asset in $assets) {
+              if (!$archive.GetEntry("Assets/$($asset.Name)")) {
+                throw "MSIX asset missing: $($asset.Name)"
+              }
+            }
+          } finally { $archive.Dispose() }
+          if (!(Test-Path publish/installer/*-Setup.exe)) { throw 'EXE installer missing.' }
 
       - name: Upload artifact (win-x64)
         uses: actions/upload-artifact@v4
         with:
           name: FreshRssClient-win-x64
           path: publish/win-x64
+          if-no-files-found: error
+
+      - name: Upload MSIX
+        uses: actions/upload-artifact@v4
+        with:
+          name: FreshRssClient-msix-win-x64
+          path: publish/msix/**/*.msix
+          if-no-files-found: error
+
+      - name: Upload EXE installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: FreshRssClient-setup-win-x64
+          path: publish/installer/*-Setup.exe
+          if-no-files-found: error

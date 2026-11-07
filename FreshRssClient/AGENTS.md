@@ -4,6 +4,10 @@
 
 This is a **WinUI 3** desktop application built on the **Windows App SDK**. It uses MSIX packaging and supports x86, x64, and ARM64 architectures.
 
+CI packaging is defined in `../.github/workflows/build.yml`: x64 portable output, an unsigned MSIX for signing before installation, and a per-user EXE installer built with `../tools/installer.iss`. Both .NET and Windows App SDK runtimes are bundled. Keep `Assets` copied to build and publish output; the window icon uses an absolute path from `AppContext.BaseDirectory`.
+
+Use separate, empty publish directories for packaged and unpackaged builds. A stale packaged `resources.pri` in unpackaged output prevents WinUI theme resources from loading.
+
 > **Source of truth for versions & names:** Always read the project `.csproj` to determine the current `TargetFramework`, `RuntimeIdentifiers`, `Platforms`, `RootNamespace`, and `Microsoft.WindowsAppSDK` package version. Never hard-code project names or version numbers in instruction files.
 >
 > Throughout this document and the instruction files, `<ProjectName>` is a placeholder -- replace it with the actual project folder/assembly name (derived from the `.csproj` filename).

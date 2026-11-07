@@ -47,17 +47,36 @@
 
 No release has been published yet. Until then, either grab the CI build or compile locally.
 
-**CI build** — open the latest green run on the [Build workflow](https://github.com/maicol07/freshrss_client/actions/workflows/build.yml), download the `FreshRssClient-win-x64` artifact, extract it anywhere (e.g. `%LocalAppData%\FreshRssClient`) and run `FreshRssClient.exe`. The publish is self-contained, so no runtime install is required.
+**CI build** — open the latest green run on the [Build workflow](https://github.com/maicol07/freshrss_client/actions/workflows/build.yml) and choose an x64 artifact:
+
+| Artifact | Installation |
+|----------|--------------|
+| `FreshRssClient-setup-win-x64` | Run the `*-Setup.exe` installer. Installs for the current user and creates a Start menu shortcut. |
+| `FreshRssClient-msix-win-x64` | MSIX package for signing and deployment. CI produces it unsigned; it must be signed with a trusted certificate before installation. |
+| `FreshRssClient-win-x64` | Extract the portable build and run `FreshRssClient.exe`. Keep all files together. |
+
+The builds include both .NET and the Windows App SDK runtime. The EXE installer preserves settings and cached articles in `%LocalAppData%\FreshRssClient`.
 
 **From source**
 
 ```bash
 git clone https://github.com/maicol07/freshrss_client.git
 cd freshrss_client
-dotnet publish FreshRssClient -c Release -r win-x64 --self-contained
+dotnet publish FreshRssClient -c Release -p:Platform=x64 -r win-x64 --self-contained -p:WindowsPackageType=None -p:WindowsAppSDKSelfContained=true -o publish/win-x64
 ```
 
 Swap `win-x64` for `win-arm64` or `win-x86` as needed.
+
+Use an empty output directory when switching between packaged and unpackaged builds. Old `resources.pri` files can prevent the portable app from starting.
+
+To build the EXE installer, install Inno Setup 6 and run its compiler from PowerShell:
+
+```powershell
+[xml]$manifest = Get-Content FreshRssClient/Package.appxmanifest
+& "${env:ProgramFiles(x86)}/Inno Setup 6/ISCC.exe" "/DAppVersion=$($manifest.Package.Identity.Version)" tools/installer.iss
+```
+
+The installer is written to `publish/installer`. For MSIX, use the `Build MSIX (unsigned)` command in the workflow. Signing requirements are described in [Microsoft's WinUI CI guide](https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/ci-for-winui3).
 
 ## Configuration
 
