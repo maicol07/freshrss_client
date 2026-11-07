@@ -193,15 +193,18 @@ namespace FreshRssClient
             if (_articlesPage == null || _settingsPage == null) return;
             if (_isRebuildingNavigation) return;
 
-            ContentGrid.Children.Clear();
+            var targetPage = args.IsSettingsSelected ? (UIElement)_settingsPage : _articlesPage;
+            if (!ContentGrid.Children.Contains(targetPage))
+            {
+                ContentGrid.Children.Clear();
+                ContentGrid.Children.Add(targetPage);
+            }
             if (args.IsSettingsSelected)
             {
-                ContentGrid.Children.Add(_settingsPage);
                 AppNavigationView.IsBackEnabled = false;
             }
             else
             {
-                ContentGrid.Children.Add(_articlesPage);
                 _articlesPage.ApplyLayoutMode();
                 AppNavigationView.IsBackEnabled = _viewModel.SelectedArticle != null;
             }

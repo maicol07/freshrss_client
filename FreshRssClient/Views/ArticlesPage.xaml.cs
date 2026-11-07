@@ -73,10 +73,15 @@ namespace FreshRssClient.Views
             Subscribe();
 
             // Initial visual state application
+            UpdateMultiSelectMode();
+            SyncSelectionToUI();
             ApplyLayoutMode();
         }
 
-        private void OnLoaded(object sender, RoutedEventArgs e) => Subscribe();
+        private void OnLoaded(object sender, RoutedEventArgs e)
+        {
+            if (_viewModel != null) Initialize(_viewModel);
+        }
 
         private void Subscribe()
         {
