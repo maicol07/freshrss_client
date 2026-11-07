@@ -36,7 +36,7 @@ namespace FreshRssClient
                 this.SystemBackdrop = new MicaBackdrop();
                 ExtendsContentIntoTitleBar = true;
                 SetTitleBar(AppTitleBar);
-                AppWindow.SetIcon("Assets/AppIcon.ico");
+                AppWindow.SetIcon(System.IO.Path.Combine(AppContext.BaseDirectory, "Assets", "AppIcon.ico"));
 
                 _viewModel = new MainViewModel();
 
